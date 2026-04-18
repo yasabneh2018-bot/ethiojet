@@ -16,7 +16,16 @@ import { fmtMoney, getTournamentInfo } from "@/lib/jetx";
 import { toast } from "sonner";
 
 const Index = () => {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
+  const { profile, refresh } = useProfile();
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!profile) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Setting up your account…</div>;
+  return <Game />;
+};
+
+const Game = () => {
+  const { user, signOut } = useAuth();
   const { profile, refresh } = useProfile();
   const nav = useNavigate();
 
@@ -24,16 +33,12 @@ const Index = () => {
   const [currentMult, setCurrentMult] = useState(1);
   const [crashMult, setCrashMult] = useState(0);
 
-  // Active bet state
   const betRef = useRef<{ amount: number; autoCashout: number | null; cashed: boolean } | null>(null);
   const [hasActiveBet, setHasActiveBet] = useState(false);
   const [cashedOut, setCashedOut] = useState(false);
   const [autoPlay, setAutoPlay] = useState(false);
 
-  if (!loading && !user) return <Navigate to="/auth" replace />;
-  if (loading || !profile) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
-  }
+  if (!profile || !user) return null;
 
   const placeBet = useCallback((amount: number, autoCashout: number | null) => {
     if (amount > profile.balance) { toast.error("Insufficient balance"); return; }
