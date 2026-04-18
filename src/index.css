@@ -117,4 +117,9 @@
   }
   .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
   .animate-jet-shake { animation: jet-shake 0.15s ease-in-out infinite; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 }
