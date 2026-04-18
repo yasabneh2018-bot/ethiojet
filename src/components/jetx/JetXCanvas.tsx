@@ -202,43 +202,44 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         </div>
       </div>
 
-      {/* Plane (body + spinning propeller). Stays visible during crash; only the trail hides. */}
-      {phase !== "waiting" && (
+      {/* Plane: only visible while flying. Hidden during crash snap-back & waiting. */}
+      {phase === "flying" && (
         <div
           className="absolute pointer-events-none select-none"
           style={{
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(70px, 9vw, 120px)",
-            transform: `translate(-65%, -55%) rotate(${planeRot}deg)`,
-            transformOrigin: "center",
+            transform: `translate(-50%, -50%) rotate(${planeRot}deg) scaleX(-1)`,
+            transformOrigin: "center center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
-            transition: phase === "crashed"
-              ? "top 0.25s ease-in, left 0.25s ease-in"
-              : "top 0.05s linear, left 0.05s linear",
+            transition: "top 0.05s linear, left 0.05s linear",
           }}
         >
-          <img
-            src={jetBody}
-            alt="JetX plane"
-            className="w-full h-auto block"
-            draggable={false}
-          />
-          {/* Propeller pinned to the front of the plane (right side of body image) */}
-          <img
-            src={jetPropeller}
-            alt=""
-            aria-hidden
-            className="absolute"
-            style={{
-              width: "38%",
-              right: "-6%",
-              top: "30%",
-              animation: "spin 0.12s linear infinite",
-              filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
-            }}
-            draggable={false}
-          />
+          <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
+            <img
+              src={jetBody}
+              alt="JetX plane"
+              className="absolute inset-0 w-full h-full object-contain"
+              draggable={false}
+            />
+            {/* Propeller pinned to the nose (left side after horizontal flip = visual front) */}
+            <img
+              src={jetPropeller}
+              alt=""
+              aria-hidden
+              className="absolute"
+              style={{
+                width: "32%",
+                left: "-4%",
+                top: "50%",
+                transform: "translateY(-50%)",
+                animation: "spin 0.12s linear infinite",
+                filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
+              }}
+              draggable={false}
+            />
+          </div>
         </div>
       )}
     </div>
