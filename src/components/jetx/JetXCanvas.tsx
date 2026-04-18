@@ -86,19 +86,22 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   }, []);
 
   // Plane progress along arc — viewBox is 1000 x 600
+  // Crashed: snap back to start instantly (plane exits fast & waits for next round)
+  const effectiveMult = phase === "crashed" ? 1 : mult;
   const VW = 1000, VH = 600;
-  const progress = Math.min(1, Math.log(mult) / Math.log(8));
+  const progress = Math.min(1, Math.log(effectiveMult) / Math.log(8));
   const x0 = 30, y0 = VH - 20;
   const xEnd = 60 + progress * (VW - 120);
-  const yEnd = (VH - 30) - progress * (VH - 80);
-  const cx = x0 + (xEnd - x0) * 0.55;
-  const cy = y0 - (y0 - yEnd) * 0.15;
+  // Very shallow climb (~4° feel) — plane stays low across the canvas
+  const yEnd = (VH - 30) - progress * (VH * 0.18);
+  const cx = x0 + (xEnd - x0) * 0.6;
+  const cy = y0 - (y0 - yEnd) * 0.25;
 
   const dx = 2 * (xEnd - cx);
   const dy = 2 * (yEnd - cy);
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
 
-  const planeRot = phase === "crashed" ? 70 : angle;
+  const planeRot = angle;
   const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${xEnd} ${yEnd}`;
   const fillPath = `${trailPath} L ${xEnd} ${VH} L ${x0} ${VH} Z`;
 
@@ -156,9 +159,6 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         <div className="text-center w-full max-w-md">
           {phase === "waiting" && (
             <div className="space-y-3">
-              <div className="text-white/70 text-xs sm:text-sm uppercase tracking-widest font-semibold">
-                Next round in {waitSecs}s
-              </div>
               <div className="h-3 sm:h-4 w-full rounded-full bg-white/10 overflow-hidden border border-white/10">
                 <div
                   className="h-full rounded-full"
@@ -170,7 +170,6 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
                   }}
                 />
               </div>
-              <div className="text-white/50 text-xs">Place your bets!</div>
             </div>
           )}
           {phase === "flying" && (
@@ -203,7 +202,9 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             transform: `translate(-65%, -55%) rotate(${planeRot}deg)`,
             transformOrigin: "center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
-            transition: "top 0.05s linear, left 0.05s linear",
+            transition: phase === "crashed"
+              ? "top 0.25s ease-in, left 0.25s ease-in"
+              : "top 0.05s linear, left 0.05s linear",
           }}
         >
           <img
