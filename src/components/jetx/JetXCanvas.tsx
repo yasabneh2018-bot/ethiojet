@@ -221,8 +221,10 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(70px, 9vw, 120px)",
-            transform: `translate(-50%, -50%) rotate(${planeRot}deg)`,
-            transformOrigin: "center center",
+            // Anchor plane TAIL to the trail endpoint (no gap between trail and tail).
+            // translateX(0) puts the plane's left edge at xEnd; -50% Y centers vertically.
+            transform: `translate(0%, -50%) rotate(${planeRot}deg)`,
+            transformOrigin: "left center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
             transition: "top 0.05s linear, left 0.05s linear",
           }}
@@ -234,17 +236,17 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
             />
-            {/* Propeller pinned to the nose (right side = direction of travel) */}
+            {/* Propeller at the NOSE (right tip), facing north (upright) */}
             <img
               src={jetPropeller}
               alt=""
               aria-hidden
               className="absolute"
               style={{
-                width: "32%",
-                right: "-4%",
-                top: "50%",
-                transform: "translateY(-50%)",
+                width: "26%",
+                right: "2%",
+                top: "32%",
+                transform: "translate(50%, -50%)",
                 animation: "spin 0.12s linear infinite",
                 filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
               }}
