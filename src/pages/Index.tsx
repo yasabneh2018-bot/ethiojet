@@ -38,20 +38,22 @@ const Game = () => {
   const [cashedOut, setCashedOut] = useState(false);
   const [autoPlay, setAutoPlay] = useState(false);
 
-  if (!profile || !user) return null;
+  const balance = profile?.balance ?? 0;
+  const wagered = profile?.total_wagered ?? 0;
+  const xp = profile?.xp ?? 0;
 
   const placeBet = useCallback((amount: number, autoCashout: number | null) => {
-    if (amount > profile.balance) { toast.error("Insufficient balance"); return; }
-    // Deduct balance optimistically
-    (supabase as any).from("profiles").update({ balance: profile.balance - amount }).eq("id", user!.id).then(refresh);
+    if (!user) return;
+    if (amount > balance) { toast.error("Insufficient balance"); return; }
+    (supabase as any).from("profiles").update({ balance: balance - amount }).eq("id", user.id).then(refresh);
     betRef.current = { amount, autoCashout, cashed: false };
     setHasActiveBet(true);
     setCashedOut(false);
     toast.success(`Bet placed: ${amount}${autoCashout ? ` · auto @${autoCashout}x` : ""}`);
-  }, [profile.balance, user, refresh]);
+  }, [balance, user, refresh]);
 
   const settleWin = useCallback(async (multiplier: number) => {
-    if (!betRef.current || betRef.current.cashed) return;
+    if (!betRef.current || betRef.current.cashed || !user) return;
     const bet = betRef.current;
     bet.cashed = true;
     setCashedOut(true);
