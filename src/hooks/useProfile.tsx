@@ -18,7 +18,7 @@ export const useProfile = () => {
 
   const refresh = useCallback(async () => {
     if (!user) { setProfile(null); setLoading(false); return; }
-    const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+    const { data } = await (supabase as any).from("profiles").select("*").eq("id", user.id).maybeSingle();
     if (data) setProfile({
       id: data.id,
       username: data.username,

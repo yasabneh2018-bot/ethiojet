@@ -24,8 +24,8 @@ export const WalletActions = ({ balance, onChanged }: Props) => {
     }
     setBusy(true);
     const newBalance = open === "deposit" ? balance + amount : balance - amount;
-    const { error: e1 } = await supabase.from("profiles").update({ balance: newBalance } as any).eq("id", user.id);
-    const { error: e2 } = await supabase.from("transactions").insert({ user_id: user.id, type: open!, amount } as any);
+    const { error: e1 } = await (supabase as any).from("profiles").update({ balance: newBalance }).eq("id", user.id);
+    const { error: e2 } = await (supabase as any).from("transactions").insert({ user_id: user.id, type: open!, amount });
     setBusy(false);
     if (e1 || e2) { toast.error("Failed"); return; }
     toast.success(`${open === "deposit" ? "Deposited" : "Withdrew"} ${amount} coins`);
