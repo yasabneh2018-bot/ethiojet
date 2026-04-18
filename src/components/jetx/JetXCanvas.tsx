@@ -92,10 +92,20 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const progress = Math.min(1, Math.log(effectiveMult) / Math.log(8));
   const x0 = 30, y0 = VH - 20;
   const xEnd = 60 + progress * (VW - 120);
-  // Very shallow climb (~4° feel) — plane stays low across the canvas
-  const yEnd = (VH - 30) - progress * (VH * 0.18);
+
+  // Bobbing motion — gentle up/down sine wave that grows with multiplier
+  const bobAmp = 12 + progress * 40; // taller bob as multiplier grows
+  const bob = phase === "flying"
+    ? Math.sin(performance.now() / 280) * bobAmp
+    : 0;
+
+  // Climb height grows with multiplier → red envelope gets taller
+  const climbBase = VH * 0.18;
+  const climbBoost = progress * VH * 0.45; // envelope rises significantly
+  const yEnd = (VH - 30) - (climbBase + climbBoost) + bob;
+
   const cx = x0 + (xEnd - x0) * 0.6;
-  const cy = y0 - (y0 - yEnd) * 0.25;
+  const cy = y0 - (y0 - yEnd) * 0.35;
 
   const dx = 2 * (xEnd - cx);
   const dy = 2 * (yEnd - cy);
