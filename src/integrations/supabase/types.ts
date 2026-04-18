@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bets: {
+        Row: {
+          amount: number
+          cashout_multiplier: number | null
+          crash_multiplier: number
+          created_at: string
+          id: string
+          payout: number
+          user_id: string
+          won: boolean
+        }
+        Insert: {
+          amount: number
+          cashout_multiplier?: number | null
+          crash_multiplier: number
+          created_at?: string
+          id?: string
+          payout?: number
+          user_id: string
+          won?: boolean
+        }
+        Update: {
+          amount?: number
+          cashout_multiplier?: number | null
+          crash_multiplier?: number
+          created_at?: string
+          id?: string
+          payout?: number
+          user_id?: string
+          won?: boolean
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          level: number
+          phone: string | null
+          total_wagered: number
+          username: string
+          xp: number
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id: string
+          level?: number
+          phone?: string | null
+          total_wagered?: number
+          username: string
+          xp?: number
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          level?: number
+          phone?: string | null
+          total_wagered?: number
+          username?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      tournament_scores: {
+        Row: {
+          id: string
+          profit: number
+          tournament_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          profit?: number
+          tournament_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          profit?: number
+          tournament_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
