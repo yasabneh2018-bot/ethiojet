@@ -111,7 +111,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const dy = 2 * (yEnd - cy);
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
 
-  const planeRot = angle;
+  // Lock plane to a fixed shallow ~2° nose-up tilt regardless of trail curve
+  const planeRot = phase === "flying" ? -2 : 0;
   const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${xEnd} ${yEnd}`;
   const fillPath = `${trailPath} L ${xEnd} ${VH} L ${x0} ${VH} Z`;
 
