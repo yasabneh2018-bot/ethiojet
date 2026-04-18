@@ -195,16 +195,16 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           )}
           {phase === "flying" && (
             <div
-              className="text-7xl sm:text-9xl font-black text-white tabular-nums"
-              style={{ textShadow: "0 0 40px rgba(255,255,255,0.5), 0 4px 0 rgba(0,0,0,0.4)" }}
+              className="text-5xl sm:text-7xl font-bold text-white tabular-nums"
+              style={{ textShadow: "0 0 30px rgba(255,255,255,0.45), 0 2px 0 rgba(0,0,0,0.4)" }}
             >
-              {mult.toFixed(2)}<span className="text-5xl sm:text-7xl">x</span>
+              {mult.toFixed(2)}<span className="text-4xl sm:text-6xl">x</span>
             </div>
           )}
           {phase === "crashed" && (
             <>
-              <div className="text-destructive text-xl sm:text-2xl font-bold mb-2 uppercase tracking-widest">Flew Away!</div>
-              <div className="text-6xl sm:text-8xl font-black text-destructive tabular-nums" style={{ textShadow: "0 0 30px hsl(0 90% 55% / 0.7)" }}>
+              <div className="text-destructive text-base sm:text-lg font-semibold mb-2 uppercase tracking-widest">Flew Away!</div>
+              <div className="text-4xl sm:text-6xl font-bold text-destructive tabular-nums" style={{ textShadow: "0 0 25px hsl(0 90% 55% / 0.7)" }}>
                 {crashMult.toFixed(2)}x
               </div>
             </>
