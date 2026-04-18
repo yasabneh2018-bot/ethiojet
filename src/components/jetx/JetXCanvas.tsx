@@ -92,10 +92,20 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const progress = Math.min(1, Math.log(effectiveMult) / Math.log(8));
   const x0 = 30, y0 = VH - 20;
   const xEnd = 60 + progress * (VW - 120);
-  // Very shallow climb (~4° feel) — plane stays low across the canvas
-  const yEnd = (VH - 30) - progress * (VH * 0.18);
+
+  // Bobbing motion — gentle up/down sine wave that grows with multiplier
+  const bobAmp = 12 + progress * 40; // taller bob as multiplier grows
+  const bob = phase === "flying"
+    ? Math.sin(performance.now() / 280) * bobAmp
+    : 0;
+
+  // Climb height grows with multiplier → red envelope gets taller
+  const climbBase = VH * 0.18;
+  const climbBoost = progress * VH * 0.45; // envelope rises significantly
+  const yEnd = (VH - 30) - (climbBase + climbBoost) + bob;
+
   const cx = x0 + (xEnd - x0) * 0.6;
-  const cy = y0 - (y0 - yEnd) * 0.25;
+  const cy = y0 - (y0 - yEnd) * 0.35;
 
   const dx = 2 * (xEnd - cx);
   const dy = 2 * (yEnd - cy);
@@ -185,16 +195,16 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           )}
           {phase === "flying" && (
             <div
-              className="text-7xl sm:text-9xl font-black text-white tabular-nums"
-              style={{ textShadow: "0 0 40px rgba(255,255,255,0.5), 0 4px 0 rgba(0,0,0,0.4)" }}
+              className="text-5xl sm:text-7xl font-bold text-white tabular-nums"
+              style={{ textShadow: "0 0 30px rgba(255,255,255,0.45), 0 2px 0 rgba(0,0,0,0.4)" }}
             >
-              {mult.toFixed(2)}<span className="text-5xl sm:text-7xl">x</span>
+              {mult.toFixed(2)}<span className="text-4xl sm:text-6xl">x</span>
             </div>
           )}
           {phase === "crashed" && (
             <>
-              <div className="text-destructive text-xl sm:text-2xl font-bold mb-2 uppercase tracking-widest">Flew Away!</div>
-              <div className="text-6xl sm:text-8xl font-black text-destructive tabular-nums" style={{ textShadow: "0 0 30px hsl(0 90% 55% / 0.7)" }}>
+              <div className="text-destructive text-base sm:text-lg font-semibold mb-2 uppercase tracking-widest">Flew Away!</div>
+              <div className="text-4xl sm:text-6xl font-bold text-destructive tabular-nums" style={{ textShadow: "0 0 25px hsl(0 90% 55% / 0.7)" }}>
                 {crashMult.toFixed(2)}x
               </div>
             </>
@@ -210,7 +220,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(70px, 9vw, 120px)",
-            transform: `translate(-50%, -50%) rotate(${planeRot}deg) scaleX(-1)`,
+            transform: `translate(-50%, -50%) rotate(${planeRot}deg)`,
             transformOrigin: "center center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
             transition: "top 0.05s linear, left 0.05s linear",
@@ -223,7 +233,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
             />
-            {/* Propeller pinned to the nose (left side after horizontal flip = visual front) */}
+            {/* Propeller pinned to the nose (right side = direction of travel) */}
             <img
               src={jetPropeller}
               alt=""
@@ -231,7 +241,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute"
               style={{
                 width: "32%",
-                left: "-4%",
+                right: "-4%",
                 top: "50%",
                 transform: "translateY(-50%)",
                 animation: "spin 0.12s linear infinite",
