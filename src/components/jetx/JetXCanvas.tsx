@@ -192,8 +192,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         </div>
       </div>
 
-      {/* Plane (body + spinning propeller) — only while flying. Crash hides instantly. */}
-      {phase === "flying" && (
+      {/* Plane (body + spinning propeller). Stays visible during crash; only the trail hides. */}
+      {phase !== "waiting" && (
         <div
           className="absolute pointer-events-none select-none"
           style={{
