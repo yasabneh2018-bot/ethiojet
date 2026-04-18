@@ -230,17 +230,14 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           style={{
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
-            width: "clamp(70px, 9vw, 120px)",
-            // Anchor plane so its lower half OVERLAPS the red envelope.
-            // translateX(0): tail sits at xEnd. translateY(-25%): plane center sits a bit
-            // ABOVE the trail line, so roughly the bottom half overlaps the envelope.
+            width: "clamp(120px, 14vw, 200px)",
+            // Lower half of plane overlaps the red envelope; tail meets trail end.
             transform: `translate(0%, -25%) rotate(${planeRot}deg)`,
             transformOrigin: "left center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
             transition: "top 0.05s linear, left 0.05s linear",
           }}
         >
-          {/* Wider-than-tall ratio matches actual plane silhouette so there's no empty gap */}
           <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
             <img
               src={jetBody}
@@ -248,17 +245,20 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
             />
-            {/* Propeller at the NOSE (right tip), facing north (upright) */}
+            {/* Propeller mounted on TOP of the nose, axle facing west (horizontal),
+                blades spin around that horizontal axis. */}
             <img
               src={jetPropeller}
               alt=""
               aria-hidden
               className="absolute"
               style={{
-                width: "26%",
-                right: "2%",
-                top: "32%",
-                transform: "translate(50%, -50%)",
+                width: "22%",
+                right: "6%",
+                top: "8%",
+                // rotate 90deg so prop disc lies flat over the nose, then spin around its center
+                transform: "translate(0%, -50%) rotate(90deg)",
+                transformOrigin: "center center",
                 animation: "spin 0.12s linear infinite",
                 filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
               }}
