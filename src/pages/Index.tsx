@@ -61,48 +61,47 @@ const Game = () => {
     const profit = payout - bet.amount;
     const xpGain = Math.floor(bet.amount);
 
-    const newBalance = profile.balance + payout;
-    const newWagered = profile.total_wagered + bet.amount;
-    const newXp = profile.xp + xpGain;
+    const newBalance = balance + payout;
+    const newWagered = wagered + bet.amount;
+    const newXp = xp + xpGain;
 
     await (supabase as any).from("profiles").update({
       balance: newBalance, total_wagered: newWagered, xp: newXp,
-    }).eq("id", user!.id);
+    }).eq("id", user.id);
 
     await (supabase as any).from("bets").insert({
-      user_id: user!.id, amount: bet.amount,
+      user_id: user.id, amount: bet.amount,
       cashout_multiplier: multiplier, crash_multiplier: crashMult || multiplier,
       payout, won: true,
     });
 
-    // Tournament score if active
     const t = getTournamentInfo();
     if (t.isActive) {
       const { data: existing } = await (supabase as any)
-        .from("tournament_scores").select("profit").eq("user_id", user!.id).eq("tournament_key", t.key).maybeSingle();
+        .from("tournament_scores").select("profit").eq("user_id", user.id).eq("tournament_key", t.key).maybeSingle();
       const newProfit = (existing ? Number(existing.profit) : 0) + profit;
       await (supabase as any).from("tournament_scores").upsert({
-        user_id: user!.id, tournament_key: t.key, profit: newProfit, updated_at: new Date().toISOString(),
+        user_id: user.id, tournament_key: t.key, profit: newProfit, updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,tournament_key" });
     }
     refresh();
     toast.success(`🚀 Cashed out @${multiplier.toFixed(2)}x — won ${fmtMoney(profit)}!`);
-  }, [crashMult, profile, user, refresh]);
+  }, [crashMult, balance, wagered, xp, user, refresh]);
 
   const settleLoss = useCallback(async () => {
-    if (!betRef.current || betRef.current.cashed) return;
+    if (!betRef.current || betRef.current.cashed || !user) return;
     const bet = betRef.current;
     bet.cashed = true;
     const xpGain = Math.floor(bet.amount);
-    const newWagered = profile.total_wagered + bet.amount;
-    const newXp = profile.xp + xpGain;
+    const newWagered = wagered + bet.amount;
+    const newXp = xp + xpGain;
 
     await (supabase as any).from("profiles").update({
       total_wagered: newWagered, xp: newXp,
-    }).eq("id", user!.id);
+    }).eq("id", user.id);
 
     await (supabase as any).from("bets").insert({
-      user_id: user!.id, amount: bet.amount,
+      user_id: user.id, amount: bet.amount,
       cashout_multiplier: null, crash_multiplier: crashMult,
       payout: 0, won: false,
     });
@@ -110,14 +109,14 @@ const Game = () => {
     const t = getTournamentInfo();
     if (t.isActive) {
       const { data: existing } = await (supabase as any)
-        .from("tournament_scores").select("profit").eq("user_id", user!.id).eq("tournament_key", t.key).maybeSingle();
+        .from("tournament_scores").select("profit").eq("user_id", user.id).eq("tournament_key", t.key).maybeSingle();
       const newProfit = (existing ? Number(existing.profit) : 0) - bet.amount;
       await (supabase as any).from("tournament_scores").upsert({
-        user_id: user!.id, tournament_key: t.key, profit: newProfit, updated_at: new Date().toISOString(),
+        user_id: user.id, tournament_key: t.key, profit: newProfit, updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,tournament_key" });
     }
     refresh();
-  }, [crashMult, profile, user, refresh]);
+  }, [crashMult, wagered, xp, user, refresh]);
 
   const onCashout = useCallback(() => {
     settleWin(currentMult);
