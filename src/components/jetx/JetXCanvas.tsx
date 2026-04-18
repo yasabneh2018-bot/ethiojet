@@ -220,7 +220,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(70px, 9vw, 120px)",
-            transform: `translate(-50%, -50%) rotate(${planeRot}deg) scaleX(-1)`,
+            transform: `translate(-50%, -50%) rotate(${planeRot}deg)`,
             transformOrigin: "center center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
             transition: "top 0.05s linear, left 0.05s linear",
@@ -233,7 +233,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
             />
-            {/* Propeller pinned to the nose (left side after horizontal flip = visual front) */}
+            {/* Propeller pinned to the nose (right side = direction of travel) */}
             <img
               src={jetPropeller}
               alt=""
@@ -241,7 +241,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute"
               style={{
                 width: "32%",
-                left: "-4%",
+                right: "-4%",
                 top: "50%",
                 transform: "translateY(-50%)",
                 animation: "spin 0.12s linear infinite",
