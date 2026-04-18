@@ -86,3 +86,24 @@ export function fmtCountdown(ms: number): string {
 export function fmtMoney(n: number): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
+// Currency: internal "balance" is stored in coins. 1 coin = 0.5 Birr.
+export const COIN_TO_BIRR = 0.5;
+export const MIN_BET_BIRR = 5;
+export const MAX_WIN_BIRR = 50000;
+
+export const coinsToBirr = (coins: number) => coins * COIN_TO_BIRR;
+export const birrToCoins = (birr: number) => birr / COIN_TO_BIRR;
+
+export function fmtBirr(birr: number): string {
+  return `${birr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Birr`;
+}
+
+// Max multiplier the game can ever reach (matches generateCrashMultiplier cap)
+export const MAX_MULTIPLIER = 1000;
+
+// Returns true if a bet (in Birr) could ever exceed MAX_WIN_BIRR
+export function betExceedsCap(betBirr: number): boolean {
+  return betBirr * MAX_MULTIPLIER > MAX_WIN_BIRR;
+}
+
