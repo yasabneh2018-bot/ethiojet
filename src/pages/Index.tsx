@@ -4,7 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { JetXCanvas, type GamePhase } from "@/components/jetx/JetXCanvas";
 import { BetControls } from "@/components/jetx/BetControls";
 import { TournamentBanner } from "@/components/jetx/TournamentBanner";
-import { Leaderboard } from "@/components/jetx/Leaderboard";
+import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
+import { HistoryStrip } from "@/components/jetx/HistoryStrip";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ const Index = () => {
   const [phase, setPhase] = useState<GamePhase>("waiting");
   const [currentMult, setCurrentMult] = useState(1);
   const [crashMult, setCrashMult] = useState(0);
+  const [history, setHistory] = useState<number[]>([]);
 
   const bet1Ref = useRef<BetSlot | null>(null);
   const bet2Ref = useRef<BetSlot | null>(null);
@@ -140,17 +142,28 @@ const Index = () => {
     });
   }, [settleWin]);
 
+  const onRoundEnd = useCallback((crash: number) => {
+    setHistory(h => [crash, ...h].slice(0, 25));
+  }, []);
+
   if (!profile || !user) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <TournamentBanner />
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <JetXCanvas onPhaseChange={onPhaseChange} onTick={onTick} />
+      <div className="grid lg:grid-cols-[280px_1fr] gap-3 min-h-[600px]">
+        {/* Left: All bets / My bets / Top */}
+        <div className="hidden lg:block h-[calc(100vh-180px)] sticky top-20">
+          <AllBetsPanel />
+        </div>
+
+        {/* Right: history strip + canvas + bet panels */}
+        <div className="space-y-3 min-w-0">
+          <HistoryStrip history={history} />
+          <JetXCanvas onPhaseChange={onPhaseChange} onTick={onTick} onRoundEnd={onRoundEnd} />
           <div className="grid sm:grid-cols-2 gap-3">
             <BetControls
-              label="Bet 1"
+              label="Bet"
               balanceBirr={balanceBirr}
               reservedByOther={reservedFor(1)}
               phase={phase}
@@ -163,7 +176,7 @@ const Index = () => {
               setAutoPlay={setAutoPlay1}
             />
             <BetControls
-              label="Bet 2"
+              label="Bet"
               balanceBirr={balanceBirr}
               reservedByOther={reservedFor(2)}
               phase={phase}
@@ -177,11 +190,8 @@ const Index = () => {
             />
           </div>
         </div>
-        <div className="space-y-4">
-          <Leaderboard />
-        </div>
       </div>
-      <footer className="text-center text-xs text-muted-foreground pt-6">
+      <footer className="text-center text-xs text-muted-foreground pt-4">
         🎮 Play-money demo · 1 coin = 0.5 Birr · Min bet 5 Birr · Max win {MAX_WIN_BIRR.toLocaleString()} Birr
       </footer>
     </div>
