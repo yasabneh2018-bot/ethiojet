@@ -36,12 +36,16 @@ export const useProfile = () => {
   useEffect(() => {
     if (!user) return;
     const ch = supabase
-      .channel(`profile-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-        () => refresh())
+      .channel(`profile-${user.id}-${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        () => refresh()
+      )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [user, refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   return { profile, loading, refresh };
 };
