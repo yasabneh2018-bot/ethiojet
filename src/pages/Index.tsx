@@ -138,12 +138,13 @@ const Game = () => {
 
   const onTick = useCallback((m: number) => {
     setCurrentMult(m);
-    // Auto-cashout
     const b = betRef.current;
     if (b && !b.cashed && b.autoCashout && m >= b.autoCashout) {
       settleWin(b.autoCashout);
     }
   }, [settleWin]);
+
+  if (!profile || !user) return null;
 
   return (
     <div className="min-h-screen pb-8">
