@@ -110,24 +110,35 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   return (
     <div className="relative w-full aspect-[16/9] sm:aspect-[16/8] rounded-2xl overflow-hidden bg-black border border-border shadow-card">
-      {/* Subtle grid */}
+      {/* Brighter grid */}
       <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
+        className="absolute inset-0 opacity-60 pointer-events-none"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }}
       />
-      {/* Stars */}
-      <div
-        className="absolute inset-0 opacity-50 pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(1.5px 1.5px at 20% 30%, white, transparent), radial-gradient(1px 1px at 70% 60%, white, transparent), radial-gradient(2px 2px at 40% 80%, white, transparent), radial-gradient(1px 1px at 85% 20%, white, transparent), radial-gradient(1.5px 1.5px at 55% 15%, white, transparent), radial-gradient(1px 1px at 15% 70%, white, transparent), radial-gradient(1.5px 1.5px at 90% 50%, white, transparent)",
-          backgroundSize: "400px 400px",
-        }}
-      />
+      {/* Drifting particles (wind motion) */}
+      <div className="absolute inset-0 bg-particles pointer-events-none opacity-70" />
+      {/* Wind streaks */}
+      {phase === "flying" && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="absolute h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+              style={{
+                top: `${15 + i * 18}%`,
+                left: 0,
+                right: 0,
+                animation: `wind-streak ${1.2 + i * 0.3}s linear infinite`,
+                animationDelay: `${i * 0.25}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Trail SVG (only while flying) */}
       {phase === "flying" && (
@@ -191,43 +202,44 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         </div>
       </div>
 
-      {/* Plane (body + spinning propeller). Stays visible during crash; only the trail hides. */}
-      {phase !== "waiting" && (
+      {/* Plane: only visible while flying. Hidden during crash snap-back & waiting. */}
+      {phase === "flying" && (
         <div
           className="absolute pointer-events-none select-none"
           style={{
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(70px, 9vw, 120px)",
-            transform: `translate(-65%, -55%) rotate(${planeRot}deg)`,
-            transformOrigin: "center",
+            transform: `translate(-50%, -50%) rotate(${planeRot}deg) scaleX(-1)`,
+            transformOrigin: "center center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
-            transition: phase === "crashed"
-              ? "top 0.25s ease-in, left 0.25s ease-in"
-              : "top 0.05s linear, left 0.05s linear",
+            transition: "top 0.05s linear, left 0.05s linear",
           }}
         >
-          <img
-            src={jetBody}
-            alt="JetX plane"
-            className="w-full h-auto block"
-            draggable={false}
-          />
-          {/* Propeller pinned to the front of the plane (right side of body image) */}
-          <img
-            src={jetPropeller}
-            alt=""
-            aria-hidden
-            className="absolute"
-            style={{
-              width: "38%",
-              right: "-6%",
-              top: "30%",
-              animation: "spin 0.12s linear infinite",
-              filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
-            }}
-            draggable={false}
-          />
+          <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
+            <img
+              src={jetBody}
+              alt="JetX plane"
+              className="absolute inset-0 w-full h-full object-contain"
+              draggable={false}
+            />
+            {/* Propeller pinned to the nose (left side after horizontal flip = visual front) */}
+            <img
+              src={jetPropeller}
+              alt=""
+              aria-hidden
+              className="absolute"
+              style={{
+                width: "32%",
+                left: "-4%",
+                top: "50%",
+                transform: "translateY(-50%)",
+                animation: "spin 0.12s linear infinite",
+                filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
+              }}
+              draggable={false}
+            />
+          </div>
         </div>
       )}
     </div>

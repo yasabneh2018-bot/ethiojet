@@ -122,4 +122,26 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
+
+  @keyframes drift-particles {
+    from { background-position: 0 0, 0 0, 0 0; }
+    to { background-position: -800px 0, -1200px 0, -1600px 0; }
+  }
+  .bg-particles {
+    background-image:
+      radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.9), transparent 60%),
+      radial-gradient(1.5px 1.5px at 30% 70%, rgba(255,255,255,0.7), transparent 60%),
+      radial-gradient(2px 2px at 60% 40%, rgba(255,255,255,0.85), transparent 60%),
+      radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.6), transparent 60%),
+      radial-gradient(1.5px 1.5px at 90% 15%, rgba(255,255,255,0.8), transparent 60%);
+    background-size: 600px 400px, 800px 500px, 1000px 600px;
+    background-repeat: repeat;
+    animation: drift-particles 12s linear infinite;
+  }
+
+  @keyframes wind-streak {
+    0% { transform: translateX(100%); opacity: 0; }
+    20% { opacity: 0.5; }
+    100% { transform: translateX(-120%); opacity: 0; }
+  }
 }
