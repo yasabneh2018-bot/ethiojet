@@ -4,9 +4,16 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Wagering from "./pages/Wagering.tsx";
+import Balance from "./pages/Balance.tsx";
+import Level from "./pages/Level.tsx";
+import Deposit from "./pages/Deposit.tsx";
+import Withdraw from "./pages/Withdraw.tsx";
+import History from "./pages/History.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,8 +25,16 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/wagering" element={<Wagering />} />
+              <Route path="/balance" element={<Balance />} />
+              <Route path="/level" element={<Level />} />
+              <Route path="/deposit" element={<Deposit />} />
+              <Route path="/withdraw" element={<Withdraw />} />
+              <Route path="/history" element={<History />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
