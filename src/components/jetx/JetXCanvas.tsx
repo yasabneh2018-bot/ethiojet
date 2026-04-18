@@ -231,9 +231,10 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(120px, 14vw, 200px)",
-            // Plane sits ON TOP of the red envelope — belly rests on the trail line.
-            // translateY(-100%) puts the plane's bottom edge exactly at yEnd (trail).
-            transform: `translate(0%, -100%) rotate(${planeRot}deg)`,
+            // Glue plane belly directly onto the red envelope trail.
+            // translateY(-90%) lifts plane just enough that its body bottom hugs yEnd
+            // (compensates for transparent padding inside the PNG).
+            transform: `translate(-2%, -90%) rotate(${planeRot}deg)`,
             transformOrigin: "left bottom",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
             transition: "top 0.05s linear, left 0.05s linear",
@@ -246,21 +247,20 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
             />
-            {/* Propeller in front of the nose, axle pointing SOUTH (vertical),
-                blades spin around the vertical axis. */}
+            {/* Vertical propeller mounted at the nose tip, spinning around its center */}
             <img
               src={jetPropeller}
               alt=""
               aria-hidden
               className="absolute"
               style={{
-                width: "20%",
-                right: "-2%",
-                top: "38%",
-                transform: "translate(0%, -50%)",
+                width: "18%",
+                right: "2%",
+                top: "42%",
+                transform: "translate(50%, -50%)",
                 transformOrigin: "center center",
-                animation: "spin 0.12s linear infinite",
-                filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
+                animation: "spin 0.1s linear infinite",
+                filter: "drop-shadow(0 0 6px rgba(255,200,80,0.7))",
               }}
               draggable={false}
             />
