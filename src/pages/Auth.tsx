@@ -9,10 +9,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Plane } from "lucide-react";
 
+// Convert phone to a synthetic email so we can use email/password auth
+// without sending OTP/SMS or email confirmation. Play-money demo only.
+const phoneToEmail = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  return `${digits}@jetx.player`;
+};
+
+const normalizePhone = (raw: string) => {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 7) return null;
+  return digits;
+};
+
 const Auth = () => {
   const { user, loading } = useAuth();
   const nav = useNavigate();
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,26 +34,45 @@ const Auth = () => {
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    const norm = normalizePhone(phone);
+    if (!norm) { toast.error("Enter a valid phone number"); return; }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: phoneToEmail(norm), password,
+    });
     setBusy(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error("Invalid phone or password");
     else { toast.success("Welcome back, pilot!"); nav("/"); }
   };
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    const norm = normalizePhone(phone);
+    if (!norm) { toast.error("Enter a valid phone number"); return; }
+    if (password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setBusy(true);
+    const uname = username.trim() || `pilot_${norm.slice(-4)}`;
     const { error } = await supabase.auth.signUp({
-      email, password,
+      email: phoneToEmail(norm),
+      password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { username: username || `pilot_${Math.random().toString(36).slice(2, 8)}` },
+        data: { username: uname, phone: norm },
       },
     });
+    if (error) {
+      setBusy(false);
+      toast.error(error.message.includes("registered") ? "Phone already registered" : error.message);
+      return;
+    }
+    // Auto-confirm is on, but session may need a sign-in if confirm flow returned without session
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      await supabase.auth.signInWithPassword({ email: phoneToEmail(norm), password });
+    }
     setBusy(false);
-    if (error) toast.error(error.message);
-    else { toast.success("Account created! You got 1000 free coins 🎉"); nav("/"); }
+    toast.success("Account created! 1000 free coins 🎉");
+    nav("/");
   };
 
   return (
@@ -59,22 +91,60 @@ const Auth = () => {
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
+
             <TabsContent value="signin">
               <form onSubmit={signIn} className="space-y-3">
-                <div><Label>Email</Label><Input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>
-                <div><Label>Password</Label><Input type="password" required value={password} onChange={e => setPassword(e.target.value)} /></div>
-                <Button disabled={busy} className="w-full bg-gradient-jet text-primary-foreground h-11 font-bold shadow-glow">Take Off</Button>
+                <div>
+                  <Label>Phone number</Label>
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="e.g. +254 712 345 678"
+                    required
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Password</Label>
+                  <Input type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+                </div>
+                <Button disabled={busy} className="w-full bg-gradient-jet text-primary-foreground h-11 font-bold shadow-glow">
+                  Take Off
+                </Button>
               </form>
             </TabsContent>
+
             <TabsContent value="signup">
               <form onSubmit={signUp} className="space-y-3">
-                <div><Label>Pilot name</Label><Input value={username} onChange={e => setUsername(e.target.value)} placeholder="ace_pilot" /></div>
-                <div><Label>Email</Label><Input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>
-                <div><Label>Password</Label><Input type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} /></div>
-                <Button disabled={busy} className="w-full bg-gradient-jet text-primary-foreground h-11 font-bold shadow-glow">Create Account · Get 1000 coins</Button>
+                <div>
+                  <Label>Pilot name</Label>
+                  <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="ace_pilot" />
+                </div>
+                <div>
+                  <Label>Phone number</Label>
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="e.g. +254 712 345 678"
+                    required
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Password</Label>
+                  <Input type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} />
+                </div>
+                <Button disabled={busy} className="w-full bg-gradient-jet text-primary-foreground h-11 font-bold shadow-glow">
+                  Create Account · Get 1000 coins
+                </Button>
               </form>
             </TabsContent>
           </Tabs>
+          <p className="text-[11px] text-muted-foreground text-center mt-4">
+            Play-money demo · No SMS or email verification
+          </p>
         </div>
       </div>
     </div>
