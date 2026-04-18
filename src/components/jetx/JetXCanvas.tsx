@@ -89,7 +89,17 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   // Crashed: snap back to start instantly (plane exits fast & waits for next round)
   const effectiveMult = phase === "crashed" ? 1 : mult;
   const VW = 1000, VH = 600;
-  const progress = Math.min(1, Math.log(effectiveMult) / Math.log(8));
+  const multProgress = Math.min(1, Math.log(effectiveMult) / Math.log(8));
+
+  // Fast launch boost — sprint from start to ~center within first 700ms
+  const LAUNCH_MS = 700;
+  const elapsed = phase === "flying" ? performance.now() - startRef.current : 0;
+  const launchT = Math.min(1, elapsed / LAUNCH_MS);
+  // ease-out cubic
+  const launchEase = 1 - Math.pow(1 - launchT, 3);
+  const launchProgress = phase === "flying" ? launchEase * 0.5 : 0;
+
+  const progress = Math.max(launchProgress, multProgress);
   const x0 = 30, y0 = VH - 20;
   const xEnd = 60 + progress * (VW - 120);
 
@@ -221,15 +231,17 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(70px, 9vw, 120px)",
-            // Anchor plane TAIL to the trail endpoint (no gap between trail and tail).
-            // translateX(0) puts the plane's left edge at xEnd; -50% Y centers vertically.
-            transform: `translate(0%, -50%) rotate(${planeRot}deg)`,
+            // Anchor plane so its lower half OVERLAPS the red envelope.
+            // translateX(0): tail sits at xEnd. translateY(-25%): plane center sits a bit
+            // ABOVE the trail line, so roughly the bottom half overlaps the envelope.
+            transform: `translate(0%, -25%) rotate(${planeRot}deg)`,
             transformOrigin: "left center",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
             transition: "top 0.05s linear, left 0.05s linear",
           }}
         >
-          <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
+          {/* Wider-than-tall ratio matches actual plane silhouette so there's no empty gap */}
+          <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
             <img
               src={jetBody}
               alt="JetX plane"
