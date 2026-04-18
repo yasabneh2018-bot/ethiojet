@@ -231,9 +231,10 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
             width: "clamp(120px, 14vw, 200px)",
-            // Lower half of plane overlaps the red envelope; tail meets trail end.
-            transform: `translate(0%, -25%) rotate(${planeRot}deg)`,
-            transformOrigin: "left center",
+            // Plane sits ON TOP of the red envelope — belly rests on the trail line.
+            // translateY(-100%) puts the plane's bottom edge exactly at yEnd (trail).
+            transform: `translate(0%, -100%) rotate(${planeRot}deg)`,
+            transformOrigin: "left bottom",
             filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
             transition: "top 0.05s linear, left 0.05s linear",
           }}
@@ -245,19 +246,18 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
             />
-            {/* Propeller mounted on TOP of the nose, axle facing west (horizontal),
-                blades spin around that horizontal axis. */}
+            {/* Propeller in front of the nose, axle pointing SOUTH (vertical),
+                blades spin around the vertical axis. */}
             <img
               src={jetPropeller}
               alt=""
               aria-hidden
               className="absolute"
               style={{
-                width: "22%",
-                right: "6%",
-                top: "8%",
-                // rotate 90deg so prop disc lies flat over the nose, then spin around its center
-                transform: "translate(0%, -50%) rotate(90deg)",
+                width: "20%",
+                right: "-2%",
+                top: "38%",
+                transform: "translate(0%, -50%)",
                 transformOrigin: "center center",
                 animation: "spin 0.12s linear infinite",
                 filter: "drop-shadow(0 0 4px rgba(255,200,80,0.6))",
