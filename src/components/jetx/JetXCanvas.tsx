@@ -100,12 +100,13 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   const progress = Math.max(launchProgress, multProgress);
   const x0 = 30, y0 = VH - 20;
-  const xEnd = 60 + progress * (VW - 120);
+  // Envelope expands further in X (reach closer to right edge)
+  const xEnd = 60 + progress * (VW - 80);
 
   // No bobbing — keep trail steady so envelope grows smoothly without twisting
-  // Climb height grows with multiplier → red envelope gets taller
-  const climbBase = VH * 0.20;
-  const climbBoost = progress * VH * 0.55; // envelope rises significantly in y
+  // Climb height grows with multiplier → red envelope gets taller (more Y range)
+  const climbBase = VH * 0.25;
+  const climbBoost = progress * VH * 0.65; // taller envelope
   const yEnd = (VH - 30) - (climbBase + climbBoost);
 
   const cx = x0 + (xEnd - x0) * 0.6;
