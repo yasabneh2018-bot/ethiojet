@@ -10,7 +10,7 @@ interface Props {
   onRoundEnd?: (crash: number) => void;
 }
 
-const WAIT_SECONDS = 5;
+const WAIT_SECONDS = 10;
 
 export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const [phase, setPhase] = useState<GamePhase>("waiting");
@@ -102,16 +102,11 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const x0 = 30, y0 = VH - 20;
   const xEnd = 60 + progress * (VW - 120);
 
-  // Bobbing motion — slight up/down sine wave
-  const bobAmp = 4 + progress * 8;
-  const bob = phase === "flying"
-    ? Math.sin(performance.now() / 320) * bobAmp
-    : 0;
-
+  // No bobbing — keep trail steady so envelope grows smoothly without twisting
   // Climb height grows with multiplier → red envelope gets taller
-  const climbBase = VH * 0.18;
-  const climbBoost = progress * VH * 0.45; // envelope rises significantly
-  const yEnd = (VH - 30) - (climbBase + climbBoost) + bob;
+  const climbBase = VH * 0.20;
+  const climbBoost = progress * VH * 0.55; // envelope rises significantly in y
+  const yEnd = (VH - 30) - (climbBase + climbBoost);
 
   const cx = x0 + (xEnd - x0) * 0.6;
   const cy = y0 - (y0 - yEnd) * 0.35;
@@ -190,6 +185,12 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         <div className="text-center w-full max-w-md">
           {phase === "waiting" && (
             <div className="space-y-3">
+              <div className="text-white/90 text-sm sm:text-base font-semibold uppercase tracking-widest">
+                Waiting for next round
+              </div>
+              <div className="text-3xl sm:text-5xl font-bold text-white tabular-nums" style={{ textShadow: "0 0 20px hsl(0 90% 55% / 0.6)" }}>
+                {waitSecs}s
+              </div>
               <div className="h-3 sm:h-4 w-full rounded-full bg-white/10 overflow-hidden border border-white/10">
                 <div
                   className="h-full rounded-full"
@@ -229,7 +230,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           style={{
             left: `${(xEnd / VW) * 100}%`,
             top: `${(yEnd / VH) * 100}%`,
-            width: "clamp(120px, 14vw, 200px)",
+            width: "clamp(162px, 18.9vw, 270px)",
             // Glue plane belly directly onto the red envelope trail.
             // translateY(-90%) lifts plane just enough that its body bottom hugs yEnd
             // (compensates for transparent padding inside the PNG).
@@ -245,23 +246,6 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               alt="JetX plane"
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
-            />
-            {/* Spinning blur disk over baked-in propeller at the nose to simulate rotation */}
-            <div
-              aria-hidden
-              className="absolute rounded-full"
-              style={{
-                width: "14%",
-                aspectRatio: "1 / 1",
-                right: "4%",
-                top: "44%",
-                transform: "translate(0%, -50%)",
-                background:
-                  "radial-gradient(circle, rgba(255,215,120,0.55) 0%, rgba(255,200,80,0.25) 40%, rgba(255,200,80,0) 70%)",
-                animation: "spin 0.08s linear infinite",
-                filter: "blur(1px)",
-                mixBlendMode: "screen",
-              }}
             />
           </div>
         </div>
