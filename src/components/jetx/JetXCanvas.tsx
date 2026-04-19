@@ -108,21 +108,24 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   const x0 = 30, y0 = VH - 30;
   // Larger play area — envelope reaches almost the full width, but plane is clamped below
-  const xEnd = 50 + progress * (VW - 60);
+  const rawXEnd = 50 + progress * (VW - 60);
 
   // Climb height grows with multiplier → taller red envelope
   const climbBase = VH * 0.28;
   const climbBoost = progress * VH * 0.72;
   // Gentle vertical bobbing while flying (small amplitude, slow)
   const bob = phase === "flying" ? Math.sin(elapsed / 650) * 14 : 0;
-  const yEnd = (VH - 35) - (climbBase + climbBoost) + bob;
+  const rawYEnd = (VH - 35) - (climbBase + climbBoost) + bob;
+
+  // Match the clamping used for the plane so envelope tip and plane stay glued
+  const TIP_MARGIN_X = 150;
+  const TIP_MARGIN_Y_TOP = 110;
+  const TIP_MARGIN_Y_BOTTOM = 90;
+  const xEnd = Math.min(VW - TIP_MARGIN_X, Math.max(0, rawXEnd));
+  const yEnd = Math.max(TIP_MARGIN_Y_TOP, Math.min(VH - TIP_MARGIN_Y_BOTTOM, rawYEnd));
 
   const cx = x0 + (xEnd - x0) * 0.6;
   const cy = y0 - (y0 - yEnd) * 0.35;
-
-  const dx = 2 * (xEnd - cx);
-  const dy = 2 * (yEnd - cy);
-  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
 
   // Lock plane to a fixed shallow ~2° nose-up tilt regardless of trail curve
   const planeRot = phase === "flying" ? -2 : 0;
