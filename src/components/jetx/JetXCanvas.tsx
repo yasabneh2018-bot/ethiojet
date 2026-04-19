@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { multiplierAt, generateCrashMultiplier } from "@/lib/jetx";
-import jetBody from "@/assets/jet-body.png";
-import jetPropeller from "@/assets/jet-propeller.png";
+import jetPlane from "@/assets/jet-plane-full.png";
 
 export type GamePhase = "waiting" | "flying" | "crashed";
 
@@ -240,29 +239,29 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             transition: "top 0.05s linear, left 0.05s linear",
           }}
         >
-          <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
+          <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
             <img
-              src={jetBody}
+              src={jetPlane}
               alt="JetX plane"
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
             />
-            {/* Vertical propeller mounted at the nose tip, spinning around its center */}
-            <img
-              src={jetPropeller}
-              alt=""
+            {/* Spinning blur disk over baked-in propeller at the nose to simulate rotation */}
+            <div
               aria-hidden
-              className="absolute"
+              className="absolute rounded-full"
               style={{
-                width: "18%",
-                right: "2%",
-                top: "42%",
-                transform: "translate(50%, -50%)",
-                transformOrigin: "center center",
-                animation: "spin 0.1s linear infinite",
-                filter: "drop-shadow(0 0 6px rgba(255,200,80,0.7))",
+                width: "14%",
+                aspectRatio: "1 / 1",
+                right: "4%",
+                top: "44%",
+                transform: "translate(0%, -50%)",
+                background:
+                  "radial-gradient(circle, rgba(255,215,120,0.55) 0%, rgba(255,200,80,0.25) 40%, rgba(255,200,80,0) 70%)",
+                animation: "spin 0.08s linear infinite",
+                filter: "blur(1px)",
+                mixBlendMode: "screen",
               }}
-              draggable={false}
             />
           </div>
         </div>
