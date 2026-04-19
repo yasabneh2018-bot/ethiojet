@@ -133,7 +133,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const waitSecs = Math.ceil(waitMs / 1000);
 
   return (
-    <div className="relative w-full aspect-[16/9] sm:aspect-[16/8] rounded-2xl overflow-hidden bg-black border border-border shadow-card">
+    <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] rounded-2xl overflow-hidden bg-black border border-border shadow-card">
       {/* Brighter grid */}
       <div
         className="absolute inset-0 opacity-60 pointer-events-none"
