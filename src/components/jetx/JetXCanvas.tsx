@@ -235,11 +235,12 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
       {/* Plane: visible while flying AND parked at start during waiting/crashed */}
       {(() => {
         const isFlying = phase === "flying";
-        // Clamp so plane never leaves the visible canvas
-        const PLANE_MARGIN_X = 110;
-        const PLANE_MARGIN_Y = 90;
+        // Clamp so the WHOLE plane stays visible inside the canvas
+        const PLANE_MARGIN_X = 150;
+        const PLANE_MARGIN_Y_TOP = 110;
+        const PLANE_MARGIN_Y_BOTTOM = 90;
         const clampedX = Math.min(VW - PLANE_MARGIN_X, Math.max(0, xEnd));
-        const clampedY = Math.max(PLANE_MARGIN_Y, Math.min(VH - 40, yEnd));
+        const clampedY = Math.max(PLANE_MARGIN_Y_TOP, Math.min(VH - PLANE_MARGIN_Y_BOTTOM, yEnd));
         const px = isFlying ? clampedX : x0;
         const py = isFlying ? clampedY : y0;
         return (
