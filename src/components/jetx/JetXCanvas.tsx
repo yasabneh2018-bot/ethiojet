@@ -90,24 +90,32 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const VW = 1000, VH = 600;
   const multProgress = Math.min(1, Math.log(effectiveMult) / Math.log(8));
 
-  // Fast launch boost — sprint from start to ~center within first 700ms
-  const LAUNCH_MS = 700;
+  // Slower, gentler launch — ease into motion instead of sprinting
+  const LAUNCH_MS = 1600;
   const elapsed = phase === "flying" ? performance.now() - startRef.current : 0;
   const launchT = Math.min(1, elapsed / LAUNCH_MS);
-  // ease-out cubic
-  const launchEase = 1 - Math.pow(1 - launchT, 3);
-  const launchProgress = phase === "flying" ? launchEase * 0.5 : 0;
+  // ease-out quad (softer than cubic)
+  const launchEase = 1 - Math.pow(1 - launchT, 2);
+  // Cap launch contribution lower so plane keeps drifting forward instead of parking mid-canvas
+  const launchProgress = phase === "flying" ? launchEase * 0.28 : 0;
 
-  const progress = Math.max(launchProgress, multProgress);
-  const x0 = 30, y0 = VH - 20;
-  // Envelope expands further in X (reach closer to right edge)
-  const xEnd = 60 + progress * (VW - 80);
+  let progress = Math.max(launchProgress, multProgress);
+  // Continuous slow drift forward so plane never freezes in the middle
+  if (phase === "flying") {
+    const drift = Math.min(0.25, elapsed / 22000); // up to +25% over ~22s
+    progress = Math.min(1, progress + drift);
+  }
 
-  // No bobbing — keep trail steady so envelope grows smoothly without twisting
-  // Climb height grows with multiplier → red envelope gets taller (more Y range)
-  const climbBase = VH * 0.25;
-  const climbBoost = progress * VH * 0.65; // taller envelope
-  const yEnd = (VH - 30) - (climbBase + climbBoost);
+  const x0 = 30, y0 = VH - 30;
+  // Larger play area — envelope reaches almost the full width, but plane is clamped below
+  const xEnd = 50 + progress * (VW - 60);
+
+  // Climb height grows with multiplier → taller red envelope
+  const climbBase = VH * 0.28;
+  const climbBoost = progress * VH * 0.72;
+  // Gentle vertical bobbing while flying (small amplitude, slow)
+  const bob = phase === "flying" ? Math.sin(elapsed / 650) * 14 : 0;
+  const yEnd = (VH - 35) - (climbBase + climbBoost) + bob;
 
   const cx = x0 + (xEnd - x0) * 0.6;
   const cy = y0 - (y0 - yEnd) * 0.35;
