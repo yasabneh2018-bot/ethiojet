@@ -235,8 +235,13 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
       {/* Plane: visible while flying AND parked at start during waiting/crashed */}
       {(() => {
         const isFlying = phase === "flying";
-        const px = isFlying ? xEnd : x0;
-        const py = isFlying ? yEnd : y0;
+        // Clamp so plane never leaves the visible canvas
+        const PLANE_MARGIN_X = 110;
+        const PLANE_MARGIN_Y = 90;
+        const clampedX = Math.min(VW - PLANE_MARGIN_X, Math.max(0, xEnd));
+        const clampedY = Math.max(PLANE_MARGIN_Y, Math.min(VH - 40, yEnd));
+        const px = isFlying ? clampedX : x0;
+        const py = isFlying ? clampedY : y0;
         return (
           <div
             className="absolute pointer-events-none select-none"
@@ -244,12 +249,11 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               left: `${(px / VW) * 100}%`,
               top: `${(py / VH) * 100}%`,
               width: "clamp(162px, 18.9vw, 270px)",
-              // Plane PNG body sits around vertical center; translateY(-58%) glues
-              // the visible body bottom (tail/belly) directly onto the trail line.
-              transform: `translate(-8%, -58%) rotate(${isFlying ? planeRot : 0}deg)`,
+              // Glue plane belly/tail tightly onto the envelope tip
+              transform: `translate(-14%, -62%) rotate(${isFlying ? planeRot : 0}deg)`,
               transformOrigin: "left bottom",
               filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
-              transition: "top 0.05s linear, left 0.05s linear",
+              transition: "top 0.08s linear, left 0.08s linear",
             }}
           >
             <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
