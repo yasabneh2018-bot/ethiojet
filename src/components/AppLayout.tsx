@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { fmtBirr, coinsToBirr } from "@/lib/jetx";
 import { ChatPanel } from "@/components/jetx/ChatPanel";
+import { BetsSheet } from "@/components/jetx/BetsSheet";
 
 const items = [
   { title: "Play JetX", url: "/", icon: Plane },
