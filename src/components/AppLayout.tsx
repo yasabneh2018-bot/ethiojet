@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { fmtBirr, coinsToBirr } from "@/lib/jetx";
 import { ChatPanel } from "@/components/jetx/ChatPanel";
+import { BetsSheet } from "@/components/jetx/BetsSheet";
 
 const items = [
   { title: "Play JetX", url: "/", icon: Plane },
@@ -79,6 +80,7 @@ export const AppLayout = () => {
           </SheetContent>
         </Sheet>
 
+        <BetsSheet />
         <ChatPanel />
 
         <div className="flex items-center gap-2">
@@ -93,7 +95,7 @@ export const AppLayout = () => {
           <span className="font-bold tabular-nums text-sm">{fmtBirr(coinsToBirr(profile.balance))}</span>
         </div>
       </header>
-      <main className="flex-1 container max-w-6xl py-4">
+      <main className="flex-1 container max-w-7xl py-3 px-2 sm:px-4">
         <Outlet />
       </main>
     </div>

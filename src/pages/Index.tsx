@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { JetXCanvas, type GamePhase } from "@/components/jetx/JetXCanvas";
 import { BetControls } from "@/components/jetx/BetControls";
 import { TournamentBanner } from "@/components/jetx/TournamentBanner";
-import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
 import { HistoryStrip } from "@/components/jetx/HistoryStrip";
+import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
 import { toast } from "sonner";
@@ -18,12 +18,13 @@ interface BetSlot {
 
 const Index = () => {
   const { user } = useAuth();
-  const { profile, refresh } = useProfile();
+  const { profile, refresh, setLocal } = useProfile();
 
   const [phase, setPhase] = useState<GamePhase>("waiting");
   const [currentMult, setCurrentMult] = useState(1);
   const [crashMult, setCrashMult] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
+  const [winEvent, setWinEvent] = useState<WinEvent | null>(null);
 
   const bet1Ref = useRef<BetSlot | null>(null);
   const bet2Ref = useRef<BetSlot | null>(null);
@@ -47,12 +48,18 @@ const Index = () => {
     if (!user || !profile) return;
     const amountCoins = birrToCoins(amountBirr);
     if (amountCoins > profile.balance) { toast.error("Insufficient balance"); return; }
-    (supabase as any).from("profiles").update({ balance: profile.balance - amountCoins }).eq("id", user.id).then(refresh);
+
+    // Optimistic deduction — instant balance update
+    const newBalance = profile.balance - amountCoins;
+    setLocal({ balance: newBalance });
+
+    (supabase as any).from("profiles").update({ balance: newBalance }).eq("id", user.id);
+
     const slotData: BetSlot = { amountBirr, autoCashout, cashed: false };
     if (slot === 1) { bet1Ref.current = slotData; setActive1(true); setCashed1(false); }
     else { bet2Ref.current = slotData; setActive2(true); setCashed2(false); }
     toast.success(`Bet ${slot}: ${fmtBirr(amountBirr)}${autoCashout ? ` · auto @${autoCashout}x` : ""}`);
-  }, [profile, user, refresh]);
+  }, [profile, user, setLocal]);
 
   const settleWin = useCallback(async (slot: 1 | 2, multiplier: number) => {
     const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
@@ -67,10 +74,19 @@ const Index = () => {
     const payoutCoins = birrToCoins(payoutBirr);
     const xpGain = Math.floor(amountCoins);
 
+    // Optimistic instant balance/xp update
+    const newBalance = profile.balance + payoutCoins;
+    const newWagered = wagered + amountCoins;
+    const newXp = xp + xpGain;
+    setLocal({ balance: newBalance, total_wagered: newWagered, xp: newXp });
+
+    // Show green win banner
+    setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
+
     await (supabase as any).from("profiles").update({
-      balance: profile.balance + payoutCoins,
-      total_wagered: wagered + amountCoins,
-      xp: xp + xpGain,
+      balance: newBalance,
+      total_wagered: newWagered,
+      xp: newXp,
     }).eq("id", user.id);
 
     await (supabase as any).from("bets").insert({
@@ -89,8 +105,7 @@ const Index = () => {
       }, { onConflict: "user_id,tournament_key" });
     }
     refresh();
-    toast.success(`🚀 Bet ${slot} cashed @${cappedMult.toFixed(2)}x — +${fmtBirr(profitBirr)}!`);
-  }, [crashMult, profile, wagered, xp, user, refresh]);
+  }, [crashMult, profile, wagered, xp, user, refresh, setLocal]);
 
   const settleLoss = useCallback(async (slot: 1 | 2) => {
     const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
@@ -98,9 +113,13 @@ const Index = () => {
     ref.cashed = true;
     const amountCoins = birrToCoins(ref.amountBirr);
     const xpGain = Math.floor(amountCoins);
+    const newWagered = wagered + amountCoins;
+    const newXp = xp + xpGain;
+    setLocal({ total_wagered: newWagered, xp: newXp });
+
     await (supabase as any).from("profiles").update({
-      total_wagered: wagered + amountCoins,
-      xp: xp + xpGain,
+      total_wagered: newWagered,
+      xp: newXp,
     }).eq("id", user.id);
     await (supabase as any).from("bets").insert({
       user_id: user.id, amount: amountCoins,
@@ -117,7 +136,7 @@ const Index = () => {
       }, { onConflict: "user_id,tournament_key" });
     }
     refresh();
-  }, [crashMult, profile, wagered, xp, user, refresh]);
+  }, [crashMult, profile, wagered, xp, user, refresh, setLocal]);
 
   const onPhaseChange = useCallback((p: GamePhase, mult: number, cm: number) => {
     setPhase(p);
@@ -151,46 +170,45 @@ const Index = () => {
   return (
     <div className="space-y-3">
       <TournamentBanner />
-      <div className="grid lg:grid-cols-[280px_1fr] gap-3 min-h-[600px]">
-        {/* Left: All bets / My bets / Top */}
-        <div className="hidden lg:block h-[calc(100vh-180px)] sticky top-20">
-          <AllBetsPanel />
-        </div>
 
-        {/* Right: history strip + canvas + bet panels */}
-        <div className="space-y-3 min-w-0">
-          <HistoryStrip history={history} />
-          <JetXCanvas onPhaseChange={onPhaseChange} onTick={onTick} onRoundEnd={onRoundEnd} />
-          <div className="grid sm:grid-cols-2 gap-3">
-            <BetControls
-              label="Bet"
-              balanceBirr={balanceBirr}
-              reservedByOther={reservedFor(1)}
-              phase={phase}
-              currentMult={currentMult}
-              onPlaceBet={placeBet(1)}
-              onCashout={() => settleWin(1, currentMult)}
-              hasActiveBet={active1}
-              cashedOut={cashed1}
-              autoPlay={autoPlay1}
-              setAutoPlay={setAutoPlay1}
-            />
-            <BetControls
-              label="Bet"
-              balanceBirr={balanceBirr}
-              reservedByOther={reservedFor(2)}
-              phase={phase}
-              currentMult={currentMult}
-              onPlaceBet={placeBet(2)}
-              onCashout={() => settleWin(2, currentMult)}
-              hasActiveBet={active2}
-              cashedOut={cashed2}
-              autoPlay={autoPlay2}
-              setAutoPlay={setAutoPlay2}
-            />
-          </div>
-        </div>
+      {/* History stretches edge-to-edge */}
+      <HistoryStrip history={history} />
+
+      {/* Full-width playing area */}
+      <div className="relative">
+        <WinBanner event={winEvent} />
+        <JetXCanvas onPhaseChange={onPhaseChange} onTick={onTick} onRoundEnd={onRoundEnd} />
       </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <BetControls
+          label="Bet"
+          balanceBirr={balanceBirr}
+          reservedByOther={reservedFor(1)}
+          phase={phase}
+          currentMult={currentMult}
+          onPlaceBet={placeBet(1)}
+          onCashout={() => settleWin(1, currentMult)}
+          hasActiveBet={active1}
+          cashedOut={cashed1}
+          autoPlay={autoPlay1}
+          setAutoPlay={setAutoPlay1}
+        />
+        <BetControls
+          label="Bet"
+          balanceBirr={balanceBirr}
+          reservedByOther={reservedFor(2)}
+          phase={phase}
+          currentMult={currentMult}
+          onPlaceBet={placeBet(2)}
+          onCashout={() => settleWin(2, currentMult)}
+          hasActiveBet={active2}
+          cashedOut={cashed2}
+          autoPlay={autoPlay2}
+          setAutoPlay={setAutoPlay2}
+        />
+      </div>
+
       <footer className="text-center text-xs text-muted-foreground pt-4">
         🎮 Play-money demo · 1 coin = 0.5 Birr · Min bet 5 Birr · Max win {MAX_WIN_BIRR.toLocaleString()} Birr
       </footer>
