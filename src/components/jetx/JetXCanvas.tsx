@@ -100,12 +100,13 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   const progress = Math.max(launchProgress, multProgress);
   const x0 = 30, y0 = VH - 20;
-  const xEnd = 60 + progress * (VW - 120);
+  // Envelope expands further in X (reach closer to right edge)
+  const xEnd = 60 + progress * (VW - 80);
 
   // No bobbing — keep trail steady so envelope grows smoothly without twisting
-  // Climb height grows with multiplier → red envelope gets taller
-  const climbBase = VH * 0.20;
-  const climbBoost = progress * VH * 0.55; // envelope rises significantly in y
+  // Climb height grows with multiplier → red envelope gets taller (more Y range)
+  const climbBase = VH * 0.25;
+  const climbBoost = progress * VH * 0.65; // taller envelope
   const yEnd = (VH - 30) - (climbBase + climbBoost);
 
   const cx = x0 + (xEnd - x0) * 0.6;
@@ -223,33 +224,37 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         </div>
       </div>
 
-      {/* Plane: only visible while flying. Hidden during crash snap-back & waiting. */}
-      {phase === "flying" && (
-        <div
-          className="absolute pointer-events-none select-none"
-          style={{
-            left: `${(xEnd / VW) * 100}%`,
-            top: `${(yEnd / VH) * 100}%`,
-            width: "clamp(162px, 18.9vw, 270px)",
-            // Glue plane belly directly onto the red envelope trail.
-            // translateY(-90%) lifts plane just enough that its body bottom hugs yEnd
-            // (compensates for transparent padding inside the PNG).
-            transform: `translate(-2%, -90%) rotate(${planeRot}deg)`,
-            transformOrigin: "left bottom",
-            filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
-            transition: "top 0.05s linear, left 0.05s linear",
-          }}
-        >
-          <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
-            <img
-              src={jetPlane}
-              alt="JetX plane"
-              className="absolute inset-0 w-full h-full object-contain"
-              draggable={false}
-            />
+      {/* Plane: visible while flying AND parked at start during waiting/crashed */}
+      {(() => {
+        const isFlying = phase === "flying";
+        const px = isFlying ? xEnd : x0;
+        const py = isFlying ? yEnd : y0;
+        return (
+          <div
+            className="absolute pointer-events-none select-none"
+            style={{
+              left: `${(px / VW) * 100}%`,
+              top: `${(py / VH) * 100}%`,
+              width: "clamp(162px, 18.9vw, 270px)",
+              // Plane PNG body sits around vertical center; translateY(-58%) glues
+              // the visible body bottom (tail/belly) directly onto the trail line.
+              transform: `translate(-8%, -58%) rotate(${isFlying ? planeRot : 0}deg)`,
+              transformOrigin: "left bottom",
+              filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
+              transition: "top 0.05s linear, left 0.05s linear",
+            }}
+          >
+            <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
+              <img
+                src={jetPlane}
+                alt="JetX plane"
+                className="absolute inset-0 w-full h-full object-contain"
+                draggable={false}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
