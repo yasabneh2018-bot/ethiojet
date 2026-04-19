@@ -47,5 +47,9 @@ export const useProfile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  return { profile, loading, refresh };
+  const setLocal = useCallback((patch: Partial<Profile>) => {
+    setProfile(p => p ? { ...p, ...patch } : p);
+  }, []);
+
+  return { profile, loading, refresh, setLocal };
 };
