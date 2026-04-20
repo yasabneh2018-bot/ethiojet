@@ -10,7 +10,7 @@ interface Props {
   onRoundEnd?: (crash: number) => void;
 }
 
-const WAIT_SECONDS = 10;
+const WAIT_SECONDS = 5;
 
 export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const [phase, setPhase] = useState<GamePhase>("waiting");
@@ -266,7 +266,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               top: `${(py / VH) * 100}%`,
               width: "clamp(162px, 18.9vw, 270px)",
               // Glue plane belly/tail tightly onto the envelope tip
-              transform: `translate(-14%, -62%) rotate(${isFlying ? planeRot : 0}deg)`,
+              transform: `translate(-6%, -78%) rotate(${isFlying ? planeRot : 0}deg)`,
               transformOrigin: "left bottom",
               filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
               transition: "top 0.08s linear, left 0.08s linear",
