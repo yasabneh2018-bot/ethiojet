@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
+import { useGameSounds } from "@/hooks/useGameSounds";
 import { JetXCanvas, type GamePhase } from "@/components/jetx/JetXCanvas";
 import { BetControls } from "@/components/jetx/BetControls";
 import { TournamentBanner } from "@/components/jetx/TournamentBanner";
