@@ -63,6 +63,20 @@ const Index = () => {
     toast.success(`Bet ${slot}: ${fmtBirr(amountBirr)}${autoCashout ? ` · auto @${autoCashout}x` : ""}`);
   }, [profile, user, setLocal]);
 
+  const cancelBet = useCallback((slot: 1 | 2) => {
+    if (!user || !profile) return;
+    const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
+    if (!ref || ref.cashed) return;
+    if (phase !== "waiting") { toast.error("Round already started"); return; }
+    const refundCoins = birrToCoins(ref.amountBirr);
+    const newBalance = profile.balance + refundCoins;
+    setLocal({ balance: newBalance });
+    (supabase as any).from("profiles").update({ balance: newBalance }).eq("id", user.id);
+    if (slot === 1) { bet1Ref.current = null; setActive1(false); setCashed1(false); }
+    else { bet2Ref.current = null; setActive2(false); setCashed2(false); }
+    toast.info(`Bet ${slot} cancelled · refunded ${fmtBirr(ref.amountBirr)}`);
+  }, [user, profile, phase, setLocal]);
+
   const settleWin = useCallback(async (slot: 1 | 2, multiplier: number) => {
     const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
     if (!ref || ref.cashed || !user || !profile) return;
