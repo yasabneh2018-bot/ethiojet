@@ -96,8 +96,9 @@ const Index = () => {
     const newXp = xp + xpGain;
     setLocal({ balance: newBalance, total_wagered: newWagered, xp: newXp });
 
-    // Show green win banner
+    // Show green win banner + cashout sound
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
+    playCashout();
 
     await (supabase as any).from("profiles").update({
       balance: newBalance,
@@ -121,7 +122,7 @@ const Index = () => {
       }, { onConflict: "user_id,tournament_key" });
     }
     refresh();
-  }, [crashMult, profile, wagered, xp, user, refresh, setLocal]);
+  }, [crashMult, profile, wagered, xp, user, refresh, setLocal, playCashout]);
 
   const settleLoss = useCallback(async (slot: 1 | 2) => {
     const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
@@ -158,15 +159,21 @@ const Index = () => {
     setPhase(p);
     setCurrentMult(mult);
     if (cm) setCrashMult(cm);
+    if (p === "flying") {
+      startFlight();
+    }
     if (p === "crashed") {
+      stopFlight();
+      playCrash();
       settleLoss(1); settleLoss(2);
     }
     if (p === "waiting") {
+      stopFlight();
       bet1Ref.current = null; bet2Ref.current = null;
       setActive1(false); setActive2(false);
       setCashed1(false); setCashed2(false);
     }
-  }, [settleLoss]);
+  }, [settleLoss, startFlight, stopFlight, playCrash]);
 
   const onTick = useCallback((m: number) => {
     setCurrentMult(m);
@@ -205,6 +212,7 @@ const Index = () => {
           currentMult={currentMult}
           onPlaceBet={placeBet(1)}
           onCashout={() => settleWin(1, currentMult)}
+          onCancelBet={() => cancelBet(1)}
           hasActiveBet={active1}
           cashedOut={cashed1}
           autoPlay={autoPlay1}
@@ -218,6 +226,7 @@ const Index = () => {
           currentMult={currentMult}
           onPlaceBet={placeBet(2)}
           onCashout={() => settleWin(2, currentMult)}
+          onCancelBet={() => cancelBet(2)}
           hasActiveBet={active2}
           cashedOut={cashed2}
           autoPlay={autoPlay2}
