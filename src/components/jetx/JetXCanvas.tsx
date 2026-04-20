@@ -113,17 +113,21 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   // Climb height grows with multiplier → taller red envelope
   const climbBase = VH * 0.28;
   const climbBoost = progress * VH * 0.72;
-  // Gentle vertical bobbing while flying (small amplitude, slow)
-  const bob = phase === "flying" ? Math.sin(elapsed / 650) * 14 : 0;
-  // Stronger bob when plane is hugging right edge (clamped)
-  const atEdge = phase === "flying" && rawXEndExceeds(elapsed); // placeholder, we compute below
-  const rawYEnd = (VH - 35) - (climbBase + climbBoost) + bob;
 
   // Match the clamping used for the plane so envelope tip and plane stay glued
   const TIP_MARGIN_X = 150;
   const TIP_MARGIN_Y_TOP = 110;
   const TIP_MARGIN_Y_BOTTOM = 90;
-  const xEnd = Math.min(VW - TIP_MARGIN_X, Math.max(0, rawXEnd));
+  const xEndLimit = VW - TIP_MARGIN_X;
+  const atRightEdge = phase === "flying" && rawXEnd >= xEndLimit;
+
+  // Gentle vertical bobbing — slightly stronger while hugging the right edge
+  const bobAmp = atRightEdge ? 30 : 14;
+  const bobSpeed = atRightEdge ? 480 : 650;
+  const bob = phase === "flying" ? Math.sin(elapsed / bobSpeed) * bobAmp : 0;
+  const rawYEnd = (VH - 35) - (climbBase + climbBoost) + bob;
+
+  const xEnd = Math.min(xEndLimit, Math.max(0, rawXEnd));
   const yEnd = Math.max(TIP_MARGIN_Y_TOP, Math.min(VH - TIP_MARGIN_Y_BOTTOM, rawYEnd));
 
   const cx = x0 + (xEnd - x0) * 0.6;
