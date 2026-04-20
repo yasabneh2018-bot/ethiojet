@@ -3,7 +3,11 @@ import { useCallback, useEffect, useRef } from "react";
 // Lightweight WebAudio sound effects — no external assets needed.
 export const useGameSounds = () => {
   const ctxRef = useRef<AudioContext | null>(null);
-  const flightOscRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
+  const flightRef = useRef<{
+    nodes: { osc: OscillatorNode; gain: GainNode }[];
+    masterGain: GainNode;
+    interval: number;
+  } | null>(null);
 
   const getCtx = useCallback(() => {
     if (!ctxRef.current) {
@@ -28,33 +32,75 @@ export const useGameSounds = () => {
 
   const startFlight = useCallback(() => {
     const ctx = getCtx();
-    if (!ctx || flightOscRef.current) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(110, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(420, ctx.currentTime + 12);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.4);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    flightOscRef.current = { osc, gain };
+    if (!ctx || flightRef.current) return;
+
+    // Master gain + soft lowpass for a warm, musical feel
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0, ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.6);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 2400;
+    filter.Q.value = 0.7;
+    filter.connect(masterGain).connect(ctx.destination);
+
+    // Bass pad (sustained chord — A minor: A2, C3, E3)
+    const padFreqs = [110, 130.81, 164.81];
+    const nodes: { osc: OscillatorNode; gain: GainNode }[] = [];
+    padFreqs.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      // Slight detune for richness
+      osc.detune.value = i === 1 ? 4 : i === 2 ? -3 : 0;
+      gain.gain.value = 0.22;
+      osc.connect(gain).connect(filter);
+      osc.start();
+      nodes.push({ osc, gain });
+    });
+
+    // Arpeggio melody (A minor pentatonic) — gentle 8th notes
+    const arpFreqs = [440, 523.25, 659.25, 783.99, 880, 783.99, 659.25, 523.25];
+    let step = 0;
+    const tickArp = () => {
+      const now = ctx.currentTime;
+      const f = arpFreqs[step % arpFreqs.length];
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.14, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+      osc.connect(gain).connect(filter);
+      osc.start(now);
+      osc.stop(now + 0.35);
+      step++;
+    };
+    tickArp();
+    const interval = window.setInterval(tickArp, 220);
+
+    flightRef.current = { nodes, masterGain, interval };
   }, [getCtx]);
 
   const stopFlight = useCallback(() => {
     const ctx = getCtx();
-    if (!ctx || !flightOscRef.current) return;
-    const { osc, gain } = flightOscRef.current;
-    gain.gain.cancelScheduledValues(ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
-    osc.stop(ctx.currentTime + 0.2);
-    flightOscRef.current = null;
+    if (!ctx || !flightRef.current) return;
+    const { nodes, masterGain, interval } = flightRef.current;
+    window.clearInterval(interval);
+    masterGain.gain.cancelScheduledValues(ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
+    nodes.forEach(({ osc }) => {
+      try { osc.stop(ctx.currentTime + 0.3); } catch {}
+    });
+    flightRef.current = null;
   }, [getCtx]);
 
   const playCrash = useCallback(() => {
     const ctx = getCtx();
     if (!ctx) return;
-    // Noise burst
     const buf = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
     const data = buf.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
