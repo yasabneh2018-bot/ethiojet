@@ -20,6 +20,7 @@ interface BetSlot {
 const Index = () => {
   const { user } = useAuth();
   const { profile, refresh, setLocal } = useProfile();
+  const { startFlight, stopFlight, playCrash, playCashout } = useGameSounds();
 
   const [phase, setPhase] = useState<GamePhase>("waiting");
   const [currentMult, setCurrentMult] = useState(1);
