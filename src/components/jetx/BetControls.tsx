@@ -14,6 +14,7 @@ interface Props {
   currentMult: number;
   onPlaceBet: (amountBirr: number, autoCashout: number | null) => void;
   onCashout: () => void;
+  onCancelBet?: () => void;
   hasActiveBet: boolean;
   cashedOut: boolean;
   autoPlay: boolean;
@@ -21,10 +22,8 @@ interface Props {
   reservedByOther?: number;
 }
 
-const PRESETS = [10, 50, 100, 500];
-
 export const BetControls = ({
-  label, balanceBirr, phase, currentMult, onPlaceBet, onCashout,
+  label, balanceBirr, phase, currentMult, onPlaceBet, onCashout, onCancelBet,
   hasActiveBet, cashedOut, autoPlay, setAutoPlay, reservedByOther = 0,
 }: Props) => {
   const [amount, setAmount] = useState(10);
@@ -56,66 +55,71 @@ export const BetControls = ({
 
   const canPlace = phase === "waiting" && !hasActiveBet && amount >= MIN_BET_BIRR && amount <= available && !betExceedsCap(amount);
   const canCashout = phase === "flying" && hasActiveBet && !cashedOut;
+  // Bet placed but round not yet flying → allow Cancel
+  const canCancel = phase === "waiting" && hasActiveBet && !cashedOut;
 
   return (
     <div className="bg-card/80 border border-border rounded-2xl p-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
         {/* Stepper */}
         <div className="flex items-center gap-1 bg-background/50 rounded-lg p-1 shrink-0">
-          <Button size="icon" variant="ghost" onClick={() => adjust(-1)} className="h-8 w-8">
+          <Button size="icon" variant="ghost" onClick={() => adjust(-1)} className="h-9 w-9">
             <Minus className="w-4 h-4" />
           </Button>
           <Input
             type="number"
             value={amount}
             onChange={e => setAmount(Math.max(0, +e.target.value))}
-            className="text-center text-base font-bold tabular-nums bg-transparent border-0 h-8 w-20 px-1 focus-visible:ring-0"
+            className="text-center text-base font-bold tabular-nums bg-transparent border-0 h-9 w-20 px-1 focus-visible:ring-0"
             min={MIN_BET_BIRR}
             step={1}
           />
-          <Button size="icon" variant="ghost" onClick={() => adjust(1)} className="h-8 w-8">
+          <Button size="icon" variant="ghost" onClick={() => adjust(1)} className="h-9 w-9">
             <Plus className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Big BET / CASHOUT button */}
+        {/* Compact action button — green BET / red CANCEL / golden CASH OUT */}
         {canCashout ? (
           <Button
             onClick={onCashout}
-            className="flex-1 h-16 text-base font-black bg-gradient-win text-success-foreground hover:opacity-90 shadow-accent-glow rounded-xl flex flex-col gap-0 leading-tight"
+            className="flex-1 h-11 text-sm font-black rounded-xl flex items-center justify-center gap-2 leading-none border-0"
+            style={{
+              background: "linear-gradient(180deg, hsl(45 100% 55%), hsl(38 95% 45%))",
+              color: "hsl(30 60% 15%)",
+              boxShadow: "0 0 18px hsl(45 100% 50% / 0.55)",
+            }}
           >
             <span>CASH OUT</span>
-            <span className="text-lg tabular-nums">{(amount * currentMult).toFixed(2)} <span className="text-xs">Birr</span></span>
+            <span className="tabular-nums">{(amount * currentMult).toFixed(2)}<span className="text-xs ml-0.5">Birr</span></span>
+          </Button>
+        ) : canCancel ? (
+          <Button
+            onClick={onCancelBet}
+            className="flex-1 h-11 text-sm font-black rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            CANCEL
           </Button>
         ) : (
           <Button
             disabled={!canPlace}
             onClick={tryPlace}
-            className="flex-1 h-16 text-base font-black bg-success text-success-foreground hover:bg-success/90 disabled:opacity-50 rounded-xl flex flex-col gap-0 leading-tight"
-            style={{ background: canPlace ? "linear-gradient(180deg, hsl(142 76% 50%), hsl(142 76% 40%))" : undefined }}
+            className="flex-1 h-11 text-sm font-black rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 leading-none border-0"
+            style={{
+              background: canPlace
+                ? "linear-gradient(180deg, hsl(142 76% 50%), hsl(142 76% 38%))"
+                : "linear-gradient(180deg, hsl(142 30% 30%), hsl(142 30% 22%))",
+              color: "white",
+            }}
           >
             <span>{label.toUpperCase()}</span>
-            <span className="text-lg tabular-nums">
+            <span className="tabular-nums">
               {hasActiveBet
                 ? (cashedOut ? "Cashed ✓" : "In Flight")
-                : phase === "flying" ? "Wait next" : <>{amount.toFixed(2)} <span className="text-xs">Birr</span></>}
+                : phase === "flying" ? "Wait" : <>{amount.toFixed(2)}<span className="text-xs ml-0.5">Birr</span></>}
             </span>
           </Button>
         )}
-      </div>
-
-      <div className="grid grid-cols-4 gap-1">
-        {PRESETS.map(p => (
-          <Button
-            key={p}
-            variant="ghost"
-            size="sm"
-            onClick={() => setAmount(Math.min(available, p))}
-            className="h-7 text-xs bg-background/40 hover:bg-background/70 rounded-md"
-          >
-            +{p}
-          </Button>
-        ))}
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">

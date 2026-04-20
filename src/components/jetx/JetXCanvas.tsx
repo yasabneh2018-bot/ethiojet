@@ -113,15 +113,21 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   // Climb height grows with multiplier → taller red envelope
   const climbBase = VH * 0.28;
   const climbBoost = progress * VH * 0.72;
-  // Gentle vertical bobbing while flying (small amplitude, slow)
-  const bob = phase === "flying" ? Math.sin(elapsed / 650) * 14 : 0;
-  const rawYEnd = (VH - 35) - (climbBase + climbBoost) + bob;
 
   // Match the clamping used for the plane so envelope tip and plane stay glued
   const TIP_MARGIN_X = 150;
   const TIP_MARGIN_Y_TOP = 110;
   const TIP_MARGIN_Y_BOTTOM = 90;
-  const xEnd = Math.min(VW - TIP_MARGIN_X, Math.max(0, rawXEnd));
+  const xEndLimit = VW - TIP_MARGIN_X;
+  const atRightEdge = phase === "flying" && rawXEnd >= xEndLimit;
+
+  // Gentle vertical bobbing — slightly stronger while hugging the right edge
+  const bobAmp = atRightEdge ? 30 : 14;
+  const bobSpeed = atRightEdge ? 480 : 650;
+  const bob = phase === "flying" ? Math.sin(elapsed / bobSpeed) * bobAmp : 0;
+  const rawYEnd = (VH - 35) - (climbBase + climbBoost) + bob;
+
+  const xEnd = Math.min(xEndLimit, Math.max(0, rawXEnd));
   const yEnd = Math.max(TIP_MARGIN_Y_TOP, Math.min(VH - TIP_MARGIN_Y_BOTTOM, rawYEnd));
 
   const cx = x0 + (xEnd - x0) * 0.6;
@@ -218,8 +224,14 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           )}
           {phase === "flying" && (
             <div
-              className="text-5xl sm:text-7xl font-bold text-white tabular-nums"
-              style={{ textShadow: "0 0 30px rgba(255,255,255,0.45), 0 2px 0 rgba(0,0,0,0.4)" }}
+              className="text-5xl sm:text-7xl font-black tabular-nums"
+              style={{
+                background: "linear-gradient(180deg, hsl(48 100% 70%), hsl(42 100% 50%) 55%, hsl(35 95% 40%))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                filter: "drop-shadow(0 0 18px hsl(45 100% 55% / 0.7)) drop-shadow(0 2px 0 rgba(0,0,0,0.4))",
+              }}
             >
               {mult.toFixed(2)}<span className="text-4xl sm:text-6xl">x</span>
             </div>

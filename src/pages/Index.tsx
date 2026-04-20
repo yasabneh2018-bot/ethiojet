@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
+import { useGameSounds } from "@/hooks/useGameSounds";
 import { JetXCanvas, type GamePhase } from "@/components/jetx/JetXCanvas";
 import { BetControls } from "@/components/jetx/BetControls";
 import { TournamentBanner } from "@/components/jetx/TournamentBanner";
@@ -19,6 +20,7 @@ interface BetSlot {
 const Index = () => {
   const { user } = useAuth();
   const { profile, refresh, setLocal } = useProfile();
+  const { startFlight, stopFlight, playCrash, playCashout } = useGameSounds();
 
   const [phase, setPhase] = useState<GamePhase>("waiting");
   const [currentMult, setCurrentMult] = useState(1);
@@ -61,6 +63,20 @@ const Index = () => {
     toast.success(`Bet ${slot}: ${fmtBirr(amountBirr)}${autoCashout ? ` · auto @${autoCashout}x` : ""}`);
   }, [profile, user, setLocal]);
 
+  const cancelBet = useCallback((slot: 1 | 2) => {
+    if (!user || !profile) return;
+    const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
+    if (!ref || ref.cashed) return;
+    if (phase !== "waiting") { toast.error("Round already started"); return; }
+    const refundCoins = birrToCoins(ref.amountBirr);
+    const newBalance = profile.balance + refundCoins;
+    setLocal({ balance: newBalance });
+    (supabase as any).from("profiles").update({ balance: newBalance }).eq("id", user.id);
+    if (slot === 1) { bet1Ref.current = null; setActive1(false); setCashed1(false); }
+    else { bet2Ref.current = null; setActive2(false); setCashed2(false); }
+    toast.info(`Bet ${slot} cancelled · refunded ${fmtBirr(ref.amountBirr)}`);
+  }, [user, profile, phase, setLocal]);
+
   const settleWin = useCallback(async (slot: 1 | 2, multiplier: number) => {
     const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
     if (!ref || ref.cashed || !user || !profile) return;
@@ -80,8 +96,9 @@ const Index = () => {
     const newXp = xp + xpGain;
     setLocal({ balance: newBalance, total_wagered: newWagered, xp: newXp });
 
-    // Show green win banner
+    // Show green win banner + cashout sound
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
+    playCashout();
 
     await (supabase as any).from("profiles").update({
       balance: newBalance,
@@ -105,7 +122,7 @@ const Index = () => {
       }, { onConflict: "user_id,tournament_key" });
     }
     refresh();
-  }, [crashMult, profile, wagered, xp, user, refresh, setLocal]);
+  }, [crashMult, profile, wagered, xp, user, refresh, setLocal, playCashout]);
 
   const settleLoss = useCallback(async (slot: 1 | 2) => {
     const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
@@ -142,15 +159,21 @@ const Index = () => {
     setPhase(p);
     setCurrentMult(mult);
     if (cm) setCrashMult(cm);
+    if (p === "flying") {
+      startFlight();
+    }
     if (p === "crashed") {
+      stopFlight();
+      playCrash();
       settleLoss(1); settleLoss(2);
     }
     if (p === "waiting") {
+      stopFlight();
       bet1Ref.current = null; bet2Ref.current = null;
       setActive1(false); setActive2(false);
       setCashed1(false); setCashed2(false);
     }
-  }, [settleLoss]);
+  }, [settleLoss, startFlight, stopFlight, playCrash]);
 
   const onTick = useCallback((m: number) => {
     setCurrentMult(m);
@@ -189,6 +212,7 @@ const Index = () => {
           currentMult={currentMult}
           onPlaceBet={placeBet(1)}
           onCashout={() => settleWin(1, currentMult)}
+          onCancelBet={() => cancelBet(1)}
           hasActiveBet={active1}
           cashedOut={cashed1}
           autoPlay={autoPlay1}
@@ -202,6 +226,7 @@ const Index = () => {
           currentMult={currentMult}
           onPlaceBet={placeBet(2)}
           onCashout={() => settleWin(2, currentMult)}
+          onCancelBet={() => cancelBet(2)}
           hasActiveBet={active2}
           cashedOut={cashed2}
           autoPlay={autoPlay2}
