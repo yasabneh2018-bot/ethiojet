@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Users, User as UserIcon, Trophy } from "lucide-react";
 import { subscribeBets, type LiveBet } from "@/lib/liveBets";
+import { supabase } from "@/integrations/supabase/client";
+import { coinsToBirr } from "@/lib/jetx";
 
 type Tab = "all" | "mine" | "top";
 
@@ -9,11 +11,12 @@ export const AllBetsPanel = () => {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("all");
   const [bets, setBets] = useState<LiveBet[]>([]);
+  const [historyMine, setHistoryMine] = useState<LiveBet[]>([]);
+  const [historyTop, setHistoryTop] = useState<LiveBet[]>([]);
 
   useEffect(() => {
     const unsub = subscribeBets((b) => {
       setBets(prev => {
-        // If cashout for an existing placed bet by same user+amount, update most recent
         if (b.status === "cashed") {
           const idx = [...prev].reverse().findIndex(p => p.user_id === b.user_id && p.status === "placed" && p.amountBirr === b.amountBirr);
           if (idx >= 0) {
@@ -29,6 +32,42 @@ export const AllBetsPanel = () => {
     return unsub;
   }, []);
 
+  // Load my bet history
+  useEffect(() => {
+    (async () => {
+      if (!user) return;
+      const { data } = await (supabase as any)
+        .from("bets").select("id,user_id,amount,cashout_multiplier,payout,won,created_at")
+        .eq("user_id", user.id).order("created_at", { ascending: false }).limit(50);
+      if (data) {
+        setHistoryMine(data.map((r: any) => ({
+          id: `db-${r.id}`, user_id: r.user_id, username: "you",
+          amountBirr: coinsToBirr(r.amount),
+          cashout: r.cashout_multiplier, payoutBirr: coinsToBirr(r.payout),
+          status: r.won ? "cashed" as const : "lost" as const,
+          ts: new Date(r.created_at).getTime(),
+        })));
+      }
+    })();
+  }, [user]);
+
+  // Load top winners
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("bets").select("id,user_id,amount,cashout_multiplier,payout,profiles(username)")
+        .eq("won", true).order("payout", { ascending: false }).limit(30);
+      if (data) {
+        setHistoryTop(data.map((r: any) => ({
+          id: `dbt-${r.id}`, user_id: r.user_id, username: r.profiles?.username ?? "player",
+          amountBirr: coinsToBirr(r.amount),
+          cashout: r.cashout_multiplier, payoutBirr: coinsToBirr(r.payout),
+          status: "cashed" as const, ts: Date.now(),
+        })));
+      }
+    })();
+  }, [tab]);
+
   // Auto-clear placed bets after 60s if not cashed (assume lost)
   useEffect(() => {
     const i = setInterval(() => {
@@ -39,9 +78,16 @@ export const AllBetsPanel = () => {
     return () => clearInterval(i);
   }, []);
 
-  let rows = bets;
-  if (tab === "mine") rows = rows.filter(b => b.user_id === user?.id);
-  if (tab === "top") rows = [...rows].filter(b => b.status === "cashed").sort((a, b) => (b.payoutBirr ?? 0) - (a.payoutBirr ?? 0));
+  let rows: LiveBet[] = bets;
+  if (tab === "mine") {
+    const liveMine = bets.filter(b => b.user_id === user?.id);
+    const seen = new Set(liveMine.map(b => b.id));
+    rows = [...liveMine, ...historyMine.filter(b => !seen.has(b.id))];
+  }
+  if (tab === "top") {
+    const liveTop = bets.filter(b => b.status === "cashed");
+    rows = [...liveTop, ...historyTop].sort((a, b) => (b.payoutBirr ?? 0) - (a.payoutBirr ?? 0)).slice(0, 50);
+  }
 
   const cashedRows = rows.filter(b => b.status === "cashed");
   const totalWin = cashedRows.reduce((s, b) => s + (b.payoutBirr ?? 0), 0);

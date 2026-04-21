@@ -121,9 +121,9 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const xEndLimit = VW - TIP_MARGIN_X;
   const atRightEdge = phase === "flying" && rawXEnd >= xEndLimit;
 
-  // Gentle vertical bobbing — slightly stronger while hugging the right edge
-  const bobAmp = atRightEdge ? 30 : 14;
-  const bobSpeed = atRightEdge ? 480 : 650;
+  // Gentle vertical bobbing — much stronger up/down sway when hugging the right edge
+  const bobAmp = atRightEdge ? 80 : 14;
+  const bobSpeed = atRightEdge ? 380 : 650;
   const bob = phase === "flying" ? Math.sin(elapsed / bobSpeed) * bobAmp : 0;
   const rawYEnd = (VH - 35) - (climbBase + climbBoost) + bob;
 
@@ -265,8 +265,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               left: `${(px / VW) * 100}%`,
               top: `${(py / VH) * 100}%`,
               width: "clamp(140px, 16vw, 230px)",
-              // Glue plane belly directly onto the envelope tip — no gap
-              transform: `translate(-18%, -62%) rotate(${isFlying ? planeRot : 0}deg)`,
+              // Center the plane body on the envelope tip (envelope hits middle of fuselage)
+              transform: `translate(-50%, -50%) rotate(${isFlying ? planeRot : 0}deg)`,
               transformOrigin: "left bottom",
               filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
               transition: "top 0.08s linear, left 0.08s linear",

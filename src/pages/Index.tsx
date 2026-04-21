@@ -218,8 +218,8 @@ const Index = () => {
       <TournamentBanner />
       <HistoryStrip history={history} />
 
-      {/* 2-column layout: live bets | game. Chat is a floating button. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-3">
+      {/* 3-column layout: live bets | game | chat (chat collapsible) */}
+      <div className={`grid grid-cols-1 gap-3 ${chatOpen ? "lg:grid-cols-[260px_1fr_320px]" : "lg:grid-cols-[260px_1fr]"}`}>
         {/* Left: live bets */}
         <aside className="hidden lg:block h-[calc(100vh-180px)] min-h-[500px]">
           <AllBetsPanel />
@@ -248,6 +248,13 @@ const Index = () => {
             />
           </div>
         </div>
+
+        {/* Right: chat — pinned at top, below header/wallet */}
+        {chatOpen && (
+          <aside className="hidden lg:block h-[calc(100vh-180px)] min-h-[500px]">
+            <InlineChat />
+          </aside>
+        )}
       </div>
 
       {/* Floating chat toggle */}
@@ -258,8 +265,9 @@ const Index = () => {
       >
         <MessageCircle className="w-6 h-6" />
       </button>
+      {/* Mobile chat overlay */}
       {chatOpen && (
-        <div className="fixed bottom-24 right-5 z-40 w-[320px] h-[480px] max-h-[70vh] shadow-2xl rounded-2xl overflow-hidden border border-border">
+        <div className="lg:hidden fixed bottom-24 right-5 z-40 w-[320px] h-[480px] max-h-[70vh] shadow-2xl rounded-2xl overflow-hidden border border-border">
           <InlineChat />
         </div>
       )}
