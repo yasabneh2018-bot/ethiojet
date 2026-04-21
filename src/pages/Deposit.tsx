@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
@@ -6,14 +6,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowDownToLine } from "lucide-react";
+import { ArrowDownToLine, History as HistoryIcon } from "lucide-react";
 import { birrToCoins, coinsToBirr, fmtBirr } from "@/lib/jetx";
+
+interface Tx {
+  id: string;
+  type: string;
+  amount: number;
+  created_at: string;
+}
 
 const Deposit = () => {
   const { user } = useAuth();
   const { profile, refresh } = useProfile();
   const [amount, setAmount] = useState(100);
   const [busy, setBusy] = useState(false);
+  const [history, setHistory] = useState<Tx[]>([]);
+
+  const loadHistory = async () => {
+    if (!user) return;
+    const { data } = await (supabase as any)
+      .from("transactions")
+      .select("id,type,amount,created_at")
+      .eq("user_id", user.id)
+      .eq("type", "deposit")
+      .order("amount", { ascending: false })
+      .limit(50);
+    if (data) setHistory(data);
+  };
+
+  useEffect(() => { loadHistory(); /* eslint-disable-next-line */ }, [user?.id]);
 
   if (!user || !profile) return null;
 
@@ -27,6 +49,7 @@ const Deposit = () => {
     if (e1 || e2) { toast.error("Failed"); return; }
     toast.success(`Deposited ${fmtBirr(amount)}`);
     refresh();
+    loadHistory();
   };
 
   return (
@@ -56,6 +79,34 @@ const Deposit = () => {
         <Button onClick={submit} disabled={busy} className="w-full bg-gradient-jet text-primary-foreground h-12 font-bold">
           Confirm deposit
         </Button>
+      </div>
+
+      {/* Deposit history — descending by amount */}
+      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card">
+        <div className="flex items-center gap-2 mb-3">
+          <HistoryIcon className="w-4 h-4 text-primary-glow" />
+          <h3 className="font-bold">Deposit History</h3>
+          <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wider">Highest first</span>
+        </div>
+        {history.length === 0 ? (
+          <div className="text-center text-xs text-muted-foreground py-6">No deposits yet</div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {history.map(tx => (
+              <div key={tx.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center py-2 text-xs">
+                <div className="truncate text-muted-foreground">
+                  {new Date(tx.created_at).toLocaleString()}
+                </div>
+                <div className="tabular-nums text-right font-bold text-success">
+                  +{fmtBirr(coinsToBirr(Number(tx.amount)))}
+                </div>
+                <div className="text-right">
+                  <span className="px-1.5 py-0.5 rounded bg-success/20 text-success text-[10px] font-bold">DONE</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -264,9 +264,9 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
             style={{
               left: `${(px / VW) * 100}%`,
               top: `${(py / VH) * 100}%`,
-              width: "clamp(162px, 18.9vw, 270px)",
-              // Glue plane belly/tail tightly onto the envelope tip
-              transform: `translate(-8%, -50%) rotate(${isFlying ? planeRot : 0}deg)`,
+              width: "clamp(140px, 16vw, 230px)",
+              // Glue plane belly directly onto the envelope tip — no gap
+              transform: `translate(-18%, -62%) rotate(${isFlying ? planeRot : 0}deg)`,
               transformOrigin: "left bottom",
               filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
               transition: "top 0.08s linear, left 0.08s linear",
