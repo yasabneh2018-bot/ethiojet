@@ -9,6 +9,7 @@ import { HistoryStrip } from "@/components/jetx/HistoryStrip";
 import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
 import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
 import { InlineChat } from "@/components/jetx/InlineChat";
+import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
 import { broadcastBet } from "@/lib/liveBets";
