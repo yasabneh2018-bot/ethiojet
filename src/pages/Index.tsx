@@ -63,6 +63,14 @@ const Index = () => {
     const slotData: BetSlot = { amountBirr, autoCashout, cashed: false };
     if (slot === 1) { bet1Ref.current = slotData; setActive1(true); setCashed1(false); }
     else { bet2Ref.current = slotData; setActive2(true); setCashed2(false); }
+    broadcastBet({
+      id: `${user.id}-${slot}-${Date.now()}`,
+      user_id: user.id,
+      username: profile.username,
+      amountBirr,
+      status: "placed",
+      ts: Date.now(),
+    });
     toast.success(`Bet ${slot}: ${fmtBirr(amountBirr)}${autoCashout ? ` · auto @${autoCashout}x` : ""}`);
   }, [profile, user, setLocal]);
 
