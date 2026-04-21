@@ -15,6 +15,12 @@ interface TopGamer {
 const Home = () => {
   const { profile } = useProfile();
   const [top, setTop] = useState<TopGamer[]>([]);
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const i = setInterval(() => setCountdown(c => (c <= 1 ? 5 : c - 1)), 1000);
+    return () => clearInterval(i);
+  }, []);
 
   useEffect(() => {
     (async () => {
