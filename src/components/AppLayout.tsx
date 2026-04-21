@@ -9,8 +9,6 @@ import {
   ArrowUpFromLine, History, LogOut,
 } from "lucide-react";
 import { fmtBirr, coinsToBirr } from "@/lib/jetx";
-import { ChatPanel } from "@/components/jetx/ChatPanel";
-import { BetsSheet } from "@/components/jetx/BetsSheet";
 
 const items = [
   { title: "Home", url: "/", icon: Award },
@@ -80,9 +78,6 @@ export const AppLayout = () => {
             </nav>
           </SheetContent>
         </Sheet>
-
-        <BetsSheet />
-        <ChatPanel />
 
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-jet flex items-center justify-center shadow-glow">

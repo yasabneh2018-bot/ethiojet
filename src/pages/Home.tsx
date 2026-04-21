@@ -4,7 +4,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, fmtBirr } from "@/lib/jetx";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, ArrowUpFromLine, Wallet, Trophy, Play, Crown } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Wallet, Trophy, Play, Crown, Timer } from "lucide-react";
 import aviatorLogo from "@/assets/aviator-logo.png";
 
 interface TopGamer {
@@ -15,6 +15,12 @@ interface TopGamer {
 const Home = () => {
   const { profile } = useProfile();
   const [top, setTop] = useState<TopGamer[]>([]);
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const i = setInterval(() => setCountdown(c => (c <= 1 ? 5 : c - 1)), 1000);
+    return () => clearInterval(i);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -41,6 +47,11 @@ const Home = () => {
         />
         <h1 className="text-3xl font-black mt-2 tracking-tight">Welcome, {profile.username}</h1>
         <p className="text-sm text-muted-foreground mt-1">Ready to fly? Cash out before it crashes.</p>
+        <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/60 border border-border">
+          <Timer className="w-4 h-4 text-primary-glow" />
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">Next round in</span>
+          <span className="text-lg font-black tabular-nums text-primary-glow">{countdown}s</span>
+        </div>
         <Button
           asChild
           size="lg"

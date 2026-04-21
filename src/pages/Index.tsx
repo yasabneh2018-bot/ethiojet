@@ -9,8 +9,10 @@ import { HistoryStrip } from "@/components/jetx/HistoryStrip";
 import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
 import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
 import { InlineChat } from "@/components/jetx/InlineChat";
+import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
+import { broadcastBet } from "@/lib/liveBets";
 import { toast } from "sonner";
 
 interface BetSlot {
@@ -38,6 +40,7 @@ const Index = () => {
   const [cashed2, setCashed2] = useState(false);
   const [autoPlay1, setAutoPlay1] = useState(false);
   const [autoPlay2, setAutoPlay2] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const balanceBirr = coinsToBirr(profile?.balance ?? 0);
   const wagered = profile?.total_wagered ?? 0;
@@ -62,6 +65,14 @@ const Index = () => {
     const slotData: BetSlot = { amountBirr, autoCashout, cashed: false };
     if (slot === 1) { bet1Ref.current = slotData; setActive1(true); setCashed1(false); }
     else { bet2Ref.current = slotData; setActive2(true); setCashed2(false); }
+    broadcastBet({
+      id: `${user.id}-${slot}-${Date.now()}`,
+      user_id: user.id,
+      username: profile.username,
+      amountBirr,
+      status: "placed",
+      ts: Date.now(),
+    });
     toast.success(`Bet ${slot}: ${fmtBirr(amountBirr)}${autoCashout ? ` · auto @${autoCashout}x` : ""}`);
   }, [profile, user, setLocal]);
 
@@ -101,6 +112,16 @@ const Index = () => {
     // Show green win banner + cashout sound
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
     playCashout();
+    broadcastBet({
+      id: `${user.id}-cash-${Date.now()}`,
+      user_id: user.id,
+      username: profile.username,
+      amountBirr: ref.amountBirr,
+      cashout: cappedMult,
+      payoutBirr,
+      status: "cashed",
+      ts: Date.now(),
+    });
 
     await (supabase as any).from("profiles").update({
       balance: newBalance,
@@ -197,8 +218,8 @@ const Index = () => {
       <TournamentBanner />
       <HistoryStrip history={history} />
 
-      {/* 3-column layout: live bets | game | chat */}
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-3">
+      {/* 2-column layout: live bets | game. Chat is a floating button. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-3">
         {/* Left: live bets */}
         <aside className="hidden lg:block h-[calc(100vh-180px)] min-h-[500px]">
           <AllBetsPanel />
@@ -227,12 +248,21 @@ const Index = () => {
             />
           </div>
         </div>
-
-        {/* Right: chat */}
-        <aside className="hidden lg:block h-[calc(100vh-180px)] min-h-[500px]">
-          <InlineChat />
-        </aside>
       </div>
+
+      {/* Floating chat toggle */}
+      <button
+        onClick={() => setChatOpen(o => !o)}
+        className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary-glow shadow-glow flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform"
+        aria-label="Toggle chat"
+      >
+        <MessageCircle className="w-6 h-6" />
+      </button>
+      {chatOpen && (
+        <div className="fixed bottom-24 right-5 z-40 w-[320px] h-[480px] max-h-[70vh] shadow-2xl rounded-2xl overflow-hidden border border-border">
+          <InlineChat />
+        </div>
+      )}
 
       <footer className="text-center text-xs text-muted-foreground pt-4">
         🎮 Play-money demo · 1 coin = 0.5 Birr · Min bet 5 Birr · Max win {MAX_WIN_BIRR.toLocaleString()} Birr
