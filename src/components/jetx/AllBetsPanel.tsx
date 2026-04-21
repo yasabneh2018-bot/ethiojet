@@ -1,71 +1,50 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { coinsToBirr } from "@/lib/jetx";
 import { Users, User as UserIcon, Trophy } from "lucide-react";
+import { subscribeBets, type LiveBet } from "@/lib/liveBets";
 
 type Tab = "all" | "mine" | "top";
-
-interface Row {
-  id: string;
-  user_id: string;
-  username: string;
-  amount: number;
-  cashout_multiplier: number | null;
-  payout: number;
-  won: boolean;
-  created_at: string;
-}
 
 export const AllBetsPanel = () => {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("all");
-  const [rows, setRows] = useState<Row[]>([]);
-
-  const load = async () => {
-    let q = (supabase as any)
-      .from("bets")
-      .select("id, user_id, amount, cashout_multiplier, payout, won, created_at, profiles!inner(username)")
-      .order("created_at", { ascending: false })
-      .limit(80);
-    if (tab === "mine" && user) q = q.eq("user_id", user.id);
-    if (tab === "top") {
-      q = (supabase as any)
-        .from("bets")
-        .select("id, user_id, amount, cashout_multiplier, payout, won, created_at, profiles!inner(username)")
-        .eq("won", true)
-        .order("payout", { ascending: false })
-        .limit(80);
-    }
-    const { data } = await q;
-    if (data) {
-      setRows(
-        data.map((b: any) => ({
-          id: b.id,
-          user_id: b.user_id,
-          username: b.profiles?.username ?? "pilot",
-          amount: Number(b.amount),
-          cashout_multiplier: b.cashout_multiplier ? Number(b.cashout_multiplier) : null,
-          payout: Number(b.payout),
-          won: b.won,
-          created_at: b.created_at,
-        })),
-      );
-    }
-  };
+  const [bets, setBets] = useState<LiveBet[]>([]);
 
   useEffect(() => {
-    load();
-    const ch = (supabase as any)
-      .channel(`all-bets-${tab}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bets" }, load)
-      .subscribe();
-    return () => { (supabase as any).removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, user?.id]);
+    const unsub = subscribeBets((b) => {
+      setBets(prev => {
+        // If cashout for an existing placed bet by same user+amount, update most recent
+        if (b.status === "cashed") {
+          const idx = [...prev].reverse().findIndex(p => p.user_id === b.user_id && p.status === "placed" && p.amountBirr === b.amountBirr);
+          if (idx >= 0) {
+            const realIdx = prev.length - 1 - idx;
+            const next = [...prev];
+            next[realIdx] = { ...next[realIdx], ...b };
+            return next;
+          }
+        }
+        return [b, ...prev].slice(0, 100);
+      });
+    });
+    return unsub;
+  }, []);
 
-  const totalWin = rows.filter(r => r.won).reduce((s, r) => s + coinsToBirr(r.payout), 0);
-  const wonCount = rows.filter(r => r.won).length;
+  // Auto-clear placed bets after 60s if not cashed (assume lost)
+  useEffect(() => {
+    const i = setInterval(() => {
+      setBets(prev => prev.map(b =>
+        b.status === "placed" && Date.now() - b.ts > 60000 ? { ...b, status: "lost" } : b
+      ));
+    }, 5000);
+    return () => clearInterval(i);
+  }, []);
+
+  let rows = bets;
+  if (tab === "mine") rows = rows.filter(b => b.user_id === user?.id);
+  if (tab === "top") rows = [...rows].filter(b => b.status === "cashed").sort((a, b) => (b.payoutBirr ?? 0) - (a.payoutBirr ?? 0));
+
+  const cashedRows = rows.filter(b => b.status === "cashed");
+  const totalWin = cashedRows.reduce((s, b) => s + (b.payoutBirr ?? 0), 0);
 
   const TabBtn = ({ id, label, icon: Icon }: { id: Tab; label: string; icon: any }) => (
     <button
@@ -89,7 +68,7 @@ export const AllBetsPanel = () => {
 
       <div className="px-3 py-2 border-b border-border flex items-center justify-between">
         <div className="text-xs text-muted-foreground">
-          <div className="font-semibold text-foreground">{wonCount}/{rows.length} <span className="font-normal text-muted-foreground">Wins</span></div>
+          <div className="font-semibold text-foreground">{cashedRows.length}/{rows.length} <span className="font-normal text-muted-foreground">Cashed</span></div>
         </div>
         <div className="text-right">
           <div className="text-base font-black tabular-nums text-success">{totalWin.toFixed(2)}</div>
@@ -106,31 +85,33 @@ export const AllBetsPanel = () => {
 
       <div className="flex-1 overflow-y-auto">
         {rows.length === 0 ? (
-          <div className="text-center py-6 text-xs text-muted-foreground">No bets yet</div>
+          <div className="text-center py-6 text-xs text-muted-foreground">Waiting for bets…</div>
         ) : (
           rows.map(r => {
             const mine = r.user_id === user?.id;
             return (
               <div
                 key={r.id}
-                className={`grid grid-cols-[1fr_auto_auto_auto] items-center px-3 py-1.5 gap-2 text-xs border-b border-border/50 ${mine ? "bg-primary/5" : ""}`}
+                className={`grid grid-cols-[1fr_auto_auto_auto] items-center px-3 py-1.5 gap-2 text-xs border-b border-border/50 ${mine ? "bg-primary/5" : ""} ${r.status === "placed" ? "animate-pulse-soft" : ""}`}
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <div className="w-5 h-5 rounded-full bg-gradient-jet shrink-0" />
+                  <div className={`w-5 h-5 rounded-full shrink-0 ${r.status === "placed" ? "bg-yellow-500" : r.status === "cashed" ? "bg-success" : "bg-muted"}`} />
                   <span className="truncate">{r.username.slice(0, 1)}***{r.username.slice(-1)}</span>
                 </div>
-                <span className="tabular-nums text-right">{coinsToBirr(r.amount).toFixed(2)}</span>
+                <span className="tabular-nums text-right">{r.amountBirr.toFixed(2)}</span>
                 <span className="tabular-nums text-right">
-                  {r.cashout_multiplier ? (
+                  {r.cashout ? (
                     <span className="px-1.5 py-0.5 rounded bg-success/20 text-success text-[10px] font-bold">
-                      {r.cashout_multiplier.toFixed(2)}x
+                      {r.cashout.toFixed(2)}x
                     </span>
+                  ) : r.status === "placed" ? (
+                    <span className="text-yellow-500 text-[10px] font-bold">flying</span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </span>
-                <span className={`tabular-nums text-right font-semibold ${r.won ? "text-success" : "text-muted-foreground"}`}>
-                  {r.won ? coinsToBirr(r.payout).toFixed(2) : "—"}
+                <span className={`tabular-nums text-right font-semibold ${r.status === "cashed" ? "text-success" : "text-muted-foreground"}`}>
+                  {r.status === "cashed" ? (r.payoutBirr ?? 0).toFixed(2) : "—"}
                 </span>
               </div>
             );
