@@ -4,7 +4,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, fmtBirr } from "@/lib/jetx";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, ArrowUpFromLine, Wallet, Trophy, Play, Crown } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Wallet, Trophy, Play, Crown, Timer } from "lucide-react";
 import aviatorLogo from "@/assets/aviator-logo.png";
 
 interface TopGamer {
