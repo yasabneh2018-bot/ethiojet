@@ -40,6 +40,7 @@ const Index = () => {
   const [cashed2, setCashed2] = useState(false);
   const [autoPlay1, setAutoPlay1] = useState(false);
   const [autoPlay2, setAutoPlay2] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const balanceBirr = coinsToBirr(profile?.balance ?? 0);
   const wagered = profile?.total_wagered ?? 0;
