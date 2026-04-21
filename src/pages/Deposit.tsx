@@ -91,22 +91,19 @@ const Deposit = () => {
         {history.length === 0 ? (
           <div className="text-center text-xs text-muted-foreground py-6">No deposits yet</div>
         ) : (
-          <div className="grid grid-cols-[1fr_auto_auto] gap-2 text-xs">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Date</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground text-right">Amount</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground text-right">Status</div>
+          <div className="divide-y divide-border/50">
             {history.map(tx => (
-              <>
-                <div key={`${tx.id}-d`} className="truncate text-muted-foreground">
+              <div key={tx.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center py-2 text-xs">
+                <div className="truncate text-muted-foreground">
                   {new Date(tx.created_at).toLocaleString()}
                 </div>
-                <div key={`${tx.id}-a`} className="tabular-nums text-right font-bold text-success">
+                <div className="tabular-nums text-right font-bold text-success">
                   +{fmtBirr(coinsToBirr(Number(tx.amount)))}
                 </div>
-                <div key={`${tx.id}-s`} className="text-right">
+                <div className="text-right">
                   <span className="px-1.5 py-0.5 rounded bg-success/20 text-success text-[10px] font-bold">DONE</span>
                 </div>
-              </>
+              </div>
             ))}
           </div>
         )}
