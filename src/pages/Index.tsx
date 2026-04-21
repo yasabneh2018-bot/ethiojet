@@ -11,6 +11,7 @@ import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
 import { InlineChat } from "@/components/jetx/InlineChat";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
+import { broadcastBet } from "@/lib/liveBets";
 import { toast } from "sonner";
 
 interface BetSlot {
