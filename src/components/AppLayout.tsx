@@ -13,7 +13,8 @@ import { ChatPanel } from "@/components/jetx/ChatPanel";
 import { BetsSheet } from "@/components/jetx/BetsSheet";
 
 const items = [
-  { title: "Play JetX", url: "/", icon: Plane },
+  { title: "Home", url: "/", icon: Award },
+  { title: "Play Aviator", url: "/play", icon: Plane },
   { title: "Wagering", url: "/wagering", icon: TrendingUp },
   { title: "My Balance", url: "/balance", icon: Wallet },
   { title: "My Level", url: "/level", icon: Award },
