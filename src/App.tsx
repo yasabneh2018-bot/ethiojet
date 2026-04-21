@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index.tsx";
+import Home from "./pages/Home.tsx";
 import Auth from "./pages/Auth.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Wagering from "./pages/Wagering.tsx";
@@ -27,7 +28,8 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route element={<AppLayout />}>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/play" element={<Index />} />
               <Route path="/wagering" element={<Wagering />} />
               <Route path="/balance" element={<Balance />} />
               <Route path="/level" element={<Level />} />

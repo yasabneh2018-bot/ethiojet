@@ -34,53 +34,79 @@ export const useGameSounds = () => {
     const ctx = getCtx();
     if (!ctx || flightRef.current) return;
 
-    // Master gain + soft lowpass for a warm, musical feel
+    // Upbeat electronic groove — driving bass + plucky lead
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0, ctx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.6);
+    masterGain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + 0.4);
 
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = 2400;
-    filter.Q.value = 0.7;
+    filter.frequency.value = 3200;
+    filter.Q.value = 1.2;
     filter.connect(masterGain).connect(ctx.destination);
 
-    // Bass pad (sustained chord — A minor: A2, C3, E3)
-    const padFreqs = [110, 130.81, 164.81];
-    const nodes: { osc: OscillatorNode; gain: GainNode }[] = [];
-    padFreqs.forEach((f, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = f;
-      // Slight detune for richness
-      osc.detune.value = i === 1 ? 4 : i === 2 ? -3 : 0;
-      gain.gain.value = 0.22;
-      osc.connect(gain).connect(filter);
-      osc.start();
-      nodes.push({ osc, gain });
-    });
+    // Sub bass drone (root note)
+    const bass = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+    bass.type = "sawtooth";
+    bass.frequency.value = 82.4; // E2
+    bassGain.gain.value = 0.15;
+    bass.connect(bassGain).connect(filter);
+    bass.start();
 
-    // Arpeggio melody (A minor pentatonic) — gentle 8th notes
-    const arpFreqs = [440, 523.25, 659.25, 783.99, 880, 783.99, 659.25, 523.25];
+    const nodes: { osc: OscillatorNode; gain: GainNode }[] = [{ osc: bass, gain: bassGain }];
+
+    // Driving synth riff (E minor groove) — faster, more energetic
+    const riff = [329.63, 392.00, 493.88, 587.33, 659.25, 587.33, 493.88, 392.00,
+                  329.63, 392.00, 493.88, 659.25, 783.99, 659.25, 493.88, 392.00];
     let step = 0;
     const tickArp = () => {
       const now = ctx.currentTime;
-      const f = arpFreqs[step % arpFreqs.length];
+      const f = riff[step % riff.length];
+      // Lead pluck
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = "triangle";
+      osc.type = "square";
       osc.frequency.value = f;
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.14, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+      gain.gain.linearRampToValueAtTime(0.12, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
       osc.connect(gain).connect(filter);
       osc.start(now);
-      osc.stop(now + 0.35);
+      osc.stop(now + 0.2);
+
+      // Kick on every 4th step
+      if (step % 4 === 0) {
+        const k = ctx.createOscillator();
+        const kg = ctx.createGain();
+        k.type = "sine";
+        k.frequency.setValueAtTime(140, now);
+        k.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+        kg.gain.setValueAtTime(0.35, now);
+        kg.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        k.connect(kg).connect(ctx.destination);
+        k.start(now);
+        k.stop(now + 0.15);
+      }
+      // Hi-hat on off-beats
+      if (step % 2 === 1) {
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const hg = ctx.createGain();
+        hg.gain.value = 0.06;
+        const hp = ctx.createBiquadFilter();
+        hp.type = "highpass";
+        hp.frequency.value = 6000;
+        src.connect(hp).connect(hg).connect(ctx.destination);
+        src.start(now);
+      }
       step++;
     };
     tickArp();
-    const interval = window.setInterval(tickArp, 220);
+    const interval = window.setInterval(tickArp, 130);
 
     flightRef.current = { nodes, masterGain, interval };
   }, [getCtx]);
