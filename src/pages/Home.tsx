@@ -47,6 +47,11 @@ const Home = () => {
         />
         <h1 className="text-3xl font-black mt-2 tracking-tight">Welcome, {profile.username}</h1>
         <p className="text-sm text-muted-foreground mt-1">Ready to fly? Cash out before it crashes.</p>
+        <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/60 border border-border">
+          <Timer className="w-4 h-4 text-primary-glow" />
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">Next round in</span>
+          <span className="text-lg font-black tabular-nums text-primary-glow">{countdown}s</span>
+        </div>
         <Button
           asChild
           size="lg"
