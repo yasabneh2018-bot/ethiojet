@@ -7,6 +7,8 @@ import { BetControls } from "@/components/jetx/BetControls";
 import { TournamentBanner } from "@/components/jetx/TournamentBanner";
 import { HistoryStrip } from "@/components/jetx/HistoryStrip";
 import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
+import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
+import { InlineChat } from "@/components/jetx/InlineChat";
 import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
 import { toast } from "sonner";
@@ -193,45 +195,43 @@ const Index = () => {
   return (
     <div className="space-y-3">
       <TournamentBanner />
-
-      {/* History stretches edge-to-edge */}
       <HistoryStrip history={history} />
 
-      {/* Full-width playing area */}
-      <div className="relative">
-        <WinBanner event={winEvent} />
-        <JetXCanvas onPhaseChange={onPhaseChange} onTick={onTick} onRoundEnd={onRoundEnd} />
-      </div>
+      {/* 3-column layout: live bets | game | chat */}
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-3">
+        {/* Left: live bets */}
+        <aside className="hidden lg:block h-[calc(100vh-180px)] min-h-[500px]">
+          <AllBetsPanel />
+        </aside>
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <BetControls
-          label="Bet"
-          balanceBirr={balanceBirr}
-          reservedByOther={reservedFor(1)}
-          phase={phase}
-          currentMult={currentMult}
-          onPlaceBet={placeBet(1)}
-          onCashout={() => settleWin(1, currentMult)}
-          onCancelBet={() => cancelBet(1)}
-          hasActiveBet={active1}
-          cashedOut={cashed1}
-          autoPlay={autoPlay1}
-          setAutoPlay={setAutoPlay1}
-        />
-        <BetControls
-          label="Bet"
-          balanceBirr={balanceBirr}
-          reservedByOther={reservedFor(2)}
-          phase={phase}
-          currentMult={currentMult}
-          onPlaceBet={placeBet(2)}
-          onCashout={() => settleWin(2, currentMult)}
-          onCancelBet={() => cancelBet(2)}
-          hasActiveBet={active2}
-          cashedOut={cashed2}
-          autoPlay={autoPlay2}
-          setAutoPlay={setAutoPlay2}
-        />
+        {/* Center: game + bet controls */}
+        <div className="space-y-3 min-w-0">
+          <div className="relative">
+            <WinBanner event={winEvent} />
+            <JetXCanvas onPhaseChange={onPhaseChange} onTick={onTick} onRoundEnd={onRoundEnd} />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <BetControls
+              label="Bet" balanceBirr={balanceBirr} reservedByOther={reservedFor(1)}
+              phase={phase} currentMult={currentMult}
+              onPlaceBet={placeBet(1)} onCashout={() => settleWin(1, currentMult)}
+              onCancelBet={() => cancelBet(1)} hasActiveBet={active1} cashedOut={cashed1}
+              autoPlay={autoPlay1} setAutoPlay={setAutoPlay1}
+            />
+            <BetControls
+              label="Bet" balanceBirr={balanceBirr} reservedByOther={reservedFor(2)}
+              phase={phase} currentMult={currentMult}
+              onPlaceBet={placeBet(2)} onCashout={() => settleWin(2, currentMult)}
+              onCancelBet={() => cancelBet(2)} hasActiveBet={active2} cashedOut={cashed2}
+              autoPlay={autoPlay2} setAutoPlay={setAutoPlay2}
+            />
+          </div>
+        </div>
+
+        {/* Right: chat */}
+        <aside className="hidden lg:block h-[calc(100vh-180px)] min-h-[500px]">
+          <InlineChat />
+        </aside>
       </div>
 
       <footer className="text-center text-xs text-muted-foreground pt-4">
