@@ -110,6 +110,16 @@ const Index = () => {
     // Show green win banner + cashout sound
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
     playCashout();
+    broadcastBet({
+      id: `${user.id}-cash-${Date.now()}`,
+      user_id: user.id,
+      username: profile.username,
+      amountBirr: ref.amountBirr,
+      cashout: cappedMult,
+      payoutBirr,
+      status: "cashed",
+      ts: Date.now(),
+    });
 
     await (supabase as any).from("profiles").update({
       balance: newBalance,
