@@ -118,11 +118,11 @@ export const BetControls = ({
               color: "white",
             }}
           >
-            <span>{label.toUpperCase()}</span>
+            <span>{phase === "flying" && !hasActiveBet ? "QUEUE" : label.toUpperCase()}</span>
             <span className="tabular-nums">
               {hasActiveBet
                 ? (cashedOut ? "Cashed ✓" : "In Flight")
-                : phase === "flying" ? "Wait" : <>{amount.toFixed(2)}<span className="text-xs ml-0.5">Birr</span></>}
+                : <>{amount.toFixed(2)}<span className="text-xs ml-0.5">Birr</span></>}
             </span>
           </Button>
         )}
