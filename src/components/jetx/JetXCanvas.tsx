@@ -149,37 +149,82 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           "linear-gradient(180deg, hsl(205 85% 55%) 0%, hsl(210 80% 45%) 45%, hsl(215 75% 30%) 100%)",
       }}
     >
-      {/* Drifting clouds — soft white blobs */}
+      {/* Realistic drifting clouds — layered cumulus puffs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-80"
-          style={{
-            backgroundImage: [
-              "radial-gradient(ellipse 180px 60px at 10% 22%, rgba(255,255,255,0.55), transparent 70%)",
-              "radial-gradient(ellipse 240px 70px at 35% 14%, rgba(255,255,255,0.45), transparent 70%)",
-              "radial-gradient(ellipse 200px 55px at 65% 28%, rgba(255,255,255,0.5), transparent 70%)",
-              "radial-gradient(ellipse 280px 80px at 88% 18%, rgba(255,255,255,0.4), transparent 70%)",
-              "radial-gradient(ellipse 220px 65px at 20% 70%, rgba(255,255,255,0.35), transparent 70%)",
-              "radial-gradient(ellipse 260px 75px at 75% 78%, rgba(255,255,255,0.3), transparent 70%)",
-            ].join(","),
-            backgroundRepeat: "repeat-x",
-            backgroundSize: "1400px 100%",
-            animation: "clouds-drift 60s linear infinite",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            backgroundImage: [
-              "radial-gradient(ellipse 160px 50px at 15% 40%, rgba(255,255,255,0.4), transparent 70%)",
-              "radial-gradient(ellipse 220px 65px at 55% 55%, rgba(255,255,255,0.35), transparent 70%)",
-              "radial-gradient(ellipse 200px 60px at 90% 48%, rgba(255,255,255,0.4), transparent 70%)",
-            ].join(","),
-            backgroundRepeat: "repeat-x",
-            backgroundSize: "1100px 100%",
-            animation: "clouds-drift 95s linear infinite",
-          }}
-        />
+        {(() => {
+          const Cloud = ({ scale = 1 }: { scale?: number }) => (
+            <svg viewBox="0 0 300 120" width={300 * scale} height={120 * scale} style={{ display: "block", overflow: "visible" }}>
+              <defs>
+                <radialGradient id={`cg-${scale}`} cx="50%" cy="40%" r="60%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.98)" />
+                  <stop offset="60%" stopColor="rgba(245,250,255,0.85)" />
+                  <stop offset="100%" stopColor="rgba(190,210,235,0.55)" />
+                </radialGradient>
+                <filter id={`cb-${scale}`} x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" />
+                </filter>
+              </defs>
+              {/* shadow base */}
+              <ellipse cx="150" cy="90" rx="140" ry="14" fill="rgba(60,90,140,0.25)" filter={`url(#cb-${scale})`} />
+              {/* puffs */}
+              <g filter={`url(#cb-${scale})`}>
+                <circle cx="70" cy="75" r="32" fill={`url(#cg-${scale})`} />
+                <circle cx="110" cy="55" r="40" fill={`url(#cg-${scale})`} />
+                <circle cx="155" cy="45" r="48" fill={`url(#cg-${scale})`} />
+                <circle cx="200" cy="55" r="42" fill={`url(#cg-${scale})`} />
+                <circle cx="240" cy="72" r="34" fill={`url(#cg-${scale})`} />
+                <circle cx="135" cy="78" r="30" fill={`url(#cg-${scale})`} />
+                <circle cx="185" cy="80" r="32" fill={`url(#cg-${scale})`} />
+              </g>
+              {/* highlight */}
+              <ellipse cx="150" cy="38" rx="55" ry="10" fill="rgba(255,255,255,0.7)" filter={`url(#cb-${scale})`} />
+            </svg>
+          );
+          // Far layer (slow, small, hazy)
+          const farClouds = [
+            { left: "5%", top: "8%", scale: 0.55, opacity: 0.55 },
+            { left: "32%", top: "4%", scale: 0.7, opacity: 0.5 },
+            { left: "60%", top: "10%", scale: 0.6, opacity: 0.55 },
+            { left: "85%", top: "6%", scale: 0.65, opacity: 0.5 },
+          ];
+          // Mid layer
+          const midClouds = [
+            { left: "12%", top: "22%", scale: 0.85, opacity: 0.85 },
+            { left: "48%", top: "18%", scale: 1.0, opacity: 0.9 },
+            { left: "78%", top: "26%", scale: 0.9, opacity: 0.85 },
+          ];
+          // Near layer (lower part, larger)
+          const nearClouds = [
+            { left: "8%", top: "62%", scale: 1.1, opacity: 0.75 },
+            { left: "55%", top: "70%", scale: 1.25, opacity: 0.7 },
+            { left: "90%", top: "58%", scale: 1.0, opacity: 0.7 },
+          ];
+          return (
+            <>
+              <div className="absolute inset-0" style={{ animation: "clouds-drift-slow 180s linear infinite" }}>
+                {farClouds.map((c, i) => (
+                  <div key={`f${i}`} className="absolute" style={{ left: c.left, top: c.top, opacity: c.opacity, filter: "blur(0.5px)" }}>
+                    <Cloud scale={c.scale} />
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-0" style={{ animation: "clouds-drift-mid 110s linear infinite" }}>
+                {midClouds.map((c, i) => (
+                  <div key={`m${i}`} className="absolute" style={{ left: c.left, top: c.top, opacity: c.opacity }}>
+                    <Cloud scale={c.scale} />
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-0" style={{ animation: "clouds-drift-fast 70s linear infinite" }}>
+                {nearClouds.map((c, i) => (
+                  <div key={`n${i}`} className="absolute" style={{ left: c.left, top: c.top, opacity: c.opacity }}>
+                    <Cloud scale={c.scale} />
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       {/* Subtle grid overlay */}
@@ -351,7 +396,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               left: `${(px / VW) * 100}%`,
               top: `${(py / VH) * 100}%`,
               width: "clamp(140px, 16vw, 230px)",
-              transform: `translate(-50%, -50%) rotate(${isCrashed ? -8 : isFlying ? planeRot : 0}deg)`,
+              transform: `translate(-67%, -50%) rotate(${isCrashed ? -8 : isFlying ? planeRot : 0}deg)`,
               transformOrigin: "left bottom",
               filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
               opacity: isCrashed ? 0 : 1,

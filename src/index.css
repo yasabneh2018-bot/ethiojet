@@ -164,4 +164,17 @@
     0% { background-position: 0% 0%; }
     100% { background-position: -1400px 0%; }
   }
+
+  @keyframes clouds-drift-slow {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-25%); }
+  }
+  @keyframes clouds-drift-mid {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-35%); }
+  }
+  @keyframes clouds-drift-fast {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
 }
