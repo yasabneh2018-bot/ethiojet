@@ -34,79 +34,73 @@ export const useGameSounds = () => {
     const ctx = getCtx();
     if (!ctx || flightRef.current) return;
 
-    // Upbeat electronic groove — driving bass + plucky lead
+    // Dreamy synthwave — warm pad + mellow bell arpeggio
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0, ctx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + 0.4);
+    masterGain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.6);
 
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = 3200;
-    filter.Q.value = 1.2;
+    filter.frequency.value = 2400;
+    filter.Q.value = 0.8;
     filter.connect(masterGain).connect(ctx.destination);
 
-    // Sub bass drone (root note)
-    const bass = ctx.createOscillator();
-    const bassGain = ctx.createGain();
-    bass.type = "sawtooth";
-    bass.frequency.value = 82.4; // E2
-    bassGain.gain.value = 0.15;
-    bass.connect(bassGain).connect(filter);
-    bass.start();
+    // Warm pad (two detuned sines for chorus feel) — A minor root
+    const pad1 = ctx.createOscillator();
+    const pad2 = ctx.createOscillator();
+    const padGain = ctx.createGain();
+    pad1.type = "sine";
+    pad2.type = "sine";
+    pad1.frequency.value = 110;     // A2
+    pad2.frequency.value = 110.6;   // detune
+    padGain.gain.value = 0.18;
+    pad1.connect(padGain);
+    pad2.connect(padGain);
+    padGain.connect(filter);
+    pad1.start();
+    pad2.start();
 
-    const nodes: { osc: OscillatorNode; gain: GainNode }[] = [{ osc: bass, gain: bassGain }];
+    const nodes: { osc: OscillatorNode; gain: GainNode }[] = [
+      { osc: pad1, gain: padGain },
+      { osc: pad2, gain: padGain },
+    ];
 
-    // Driving synth riff (E minor groove) — faster, more energetic
-    const riff = [329.63, 392.00, 493.88, 587.33, 659.25, 587.33, 493.88, 392.00,
-                  329.63, 392.00, 493.88, 659.25, 783.99, 659.25, 493.88, 392.00];
+    // Mellow bell arpeggio (A minor pentatonic, slow & dreamy)
+    const arp = [440.00, 523.25, 659.25, 783.99, 880.00, 783.99, 659.25, 523.25];
     let step = 0;
     const tickArp = () => {
       const now = ctx.currentTime;
-      const f = riff[step % riff.length];
-      // Lead pluck
+      const f = arp[step % arp.length];
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = "square";
+      osc.type = "triangle";
       osc.frequency.value = f;
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.12, now + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      gain.gain.linearRampToValueAtTime(0.09, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
       osc.connect(gain).connect(filter);
       osc.start(now);
-      osc.stop(now + 0.2);
+      osc.stop(now + 0.6);
 
-      // Kick on every 4th step
-      if (step % 4 === 0) {
-        const k = ctx.createOscillator();
-        const kg = ctx.createGain();
-        k.type = "sine";
-        k.frequency.setValueAtTime(140, now);
-        k.frequency.exponentialRampToValueAtTime(45, now + 0.12);
-        kg.gain.setValueAtTime(0.35, now);
-        kg.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-        k.connect(kg).connect(ctx.destination);
-        k.start(now);
-        k.stop(now + 0.15);
-      }
-      // Hi-hat on off-beats
-      if (step % 2 === 1) {
-        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+      // Soft shaker every other step
+      if (step % 2 === 0) {
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
         const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) * 0.5;
         const src = ctx.createBufferSource();
         src.buffer = buf;
-        const hg = ctx.createGain();
-        hg.gain.value = 0.06;
+        const sg = ctx.createGain();
+        sg.gain.value = 0.04;
         const hp = ctx.createBiquadFilter();
         hp.type = "highpass";
-        hp.frequency.value = 6000;
-        src.connect(hp).connect(hg).connect(ctx.destination);
+        hp.frequency.value = 4000;
+        src.connect(hp).connect(sg).connect(ctx.destination);
         src.start(now);
       }
       step++;
     };
     tickArp();
-    const interval = window.setInterval(tickArp, 130);
+    const interval = window.setInterval(tickArp, 280);
 
     flightRef.current = { nodes, masterGain, interval };
   }, [getCtx]);
