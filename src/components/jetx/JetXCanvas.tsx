@@ -132,15 +132,20 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   // Lock plane to a fixed shallow ~3° nose-up tilt
   const planeRot = phase === "flying" ? -3 : 0;
-  // Straight-line trail: envelope grows directly with the plane (no separate curve growth)
-  const trailPath = `M ${x0} ${y0} L ${xEnd} ${yEnd}`;
+  // Curved trail — quadratic bezier sweeping up to the plane
+  const cx = x0 + (xEnd - x0) * 0.65;
+  const cy = y0 - (y0 - yEnd) * 0.25;
+  const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${xEnd} ${yEnd}`;
   const fillPath = `${trailPath} L ${xEnd} ${VH} L ${x0} ${VH} Z`;
 
   const waitProgress = 1 - waitMs / (WAIT_SECONDS * 1000);
   const waitSecs = Math.ceil(waitMs / 1000);
 
   return (
-    <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] overflow-hidden bg-black shadow-card">
+    <div
+      className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] overflow-hidden shadow-card"
+      style={{ background: "radial-gradient(ellipse at center, hsl(220 60% 10%) 0%, hsl(225 70% 5%) 70%, hsl(230 80% 3%) 100%)" }}
+    >
       {/* Brighter grid */}
       <div
         className="absolute inset-0 opacity-60 pointer-events-none"
@@ -177,7 +182,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               "radial-gradient(circle, rgba(255,255,255,0.85) 1.4px, transparent 2px)",
             backgroundSize: "100% 28px",
             backgroundRepeat: "repeat-y",
-            animation: "axis-dots-down 4s linear infinite",
+            animation: "axis-dots-down 14s linear infinite",
           }}
         />
       </div>
@@ -193,7 +198,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               "radial-gradient(circle, rgba(255,255,255,0.85) 1.4px, transparent 2px)",
             backgroundSize: "28px 100%",
             backgroundRepeat: "repeat-x",
-            animation: "axis-dots-left 4s linear infinite",
+            animation: "axis-dots-left 14s linear infinite",
           }}
         />
       </div>
