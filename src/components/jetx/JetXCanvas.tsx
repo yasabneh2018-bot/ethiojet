@@ -130,12 +130,10 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const xEnd = Math.min(xEndLimit, Math.max(0, rawXEnd));
   const yEnd = Math.max(TIP_MARGIN_Y_TOP, Math.min(VH - TIP_MARGIN_Y_BOTTOM, rawYEnd));
 
-  const cx = x0 + (xEnd - x0) * 0.6;
-  const cy = y0 - (y0 - yEnd) * 0.35;
-
-  // Lock plane to a fixed shallow ~3° nose-up tilt regardless of trail curve
+  // Lock plane to a fixed shallow ~3° nose-up tilt
   const planeRot = phase === "flying" ? -3 : 0;
-  const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${xEnd} ${yEnd}`;
+  // Straight-line trail: envelope grows directly with the plane (no separate curve growth)
+  const trailPath = `M ${x0} ${y0} L ${xEnd} ${yEnd}`;
   const fillPath = `${trailPath} L ${xEnd} ${VH} L ${x0} ${VH} Z`;
 
   const waitProgress = 1 - waitMs / (WAIT_SECONDS * 1000);
