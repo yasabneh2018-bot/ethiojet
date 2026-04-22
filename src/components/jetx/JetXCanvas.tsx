@@ -396,7 +396,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               left: `${(px / VW) * 100}%`,
               top: `${(py / VH) * 100}%`,
               width: "clamp(140px, 16vw, 230px)",
-              transform: `translate(-67%, -50%) rotate(${isCrashed ? -8 : isFlying ? planeRot : 0}deg)`,
+              transform: `translate(-33%, -50%) rotate(${isCrashed ? -8 : isFlying ? planeRot : 0}deg)`,
               transformOrigin: "left bottom",
               filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
               opacity: isCrashed ? 0 : 1,
