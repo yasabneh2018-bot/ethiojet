@@ -144,19 +144,55 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   return (
     <div
       className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] overflow-hidden shadow-card"
-      style={{ background: "radial-gradient(ellipse at center, hsl(220 60% 10%) 0%, hsl(225 70% 5%) 70%, hsl(230 80% 3%) 100%)" }}
+      style={{
+        background:
+          "linear-gradient(180deg, hsl(205 85% 55%) 0%, hsl(210 80% 45%) 45%, hsl(215 75% 30%) 100%)",
+      }}
     >
-      {/* Brighter grid */}
+      {/* Drifting clouds — soft white blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-80"
+          style={{
+            backgroundImage: [
+              "radial-gradient(ellipse 180px 60px at 10% 22%, rgba(255,255,255,0.55), transparent 70%)",
+              "radial-gradient(ellipse 240px 70px at 35% 14%, rgba(255,255,255,0.45), transparent 70%)",
+              "radial-gradient(ellipse 200px 55px at 65% 28%, rgba(255,255,255,0.5), transparent 70%)",
+              "radial-gradient(ellipse 280px 80px at 88% 18%, rgba(255,255,255,0.4), transparent 70%)",
+              "radial-gradient(ellipse 220px 65px at 20% 70%, rgba(255,255,255,0.35), transparent 70%)",
+              "radial-gradient(ellipse 260px 75px at 75% 78%, rgba(255,255,255,0.3), transparent 70%)",
+            ].join(","),
+            backgroundRepeat: "repeat-x",
+            backgroundSize: "1400px 100%",
+            animation: "clouds-drift 60s linear infinite",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-60"
+          style={{
+            backgroundImage: [
+              "radial-gradient(ellipse 160px 50px at 15% 40%, rgba(255,255,255,0.4), transparent 70%)",
+              "radial-gradient(ellipse 220px 65px at 55% 55%, rgba(255,255,255,0.35), transparent 70%)",
+              "radial-gradient(ellipse 200px 60px at 90% 48%, rgba(255,255,255,0.4), transparent 70%)",
+            ].join(","),
+            backgroundRepeat: "repeat-x",
+            backgroundSize: "1100px 100%",
+            animation: "clouds-drift 95s linear infinite",
+          }}
+        />
+      </div>
+
+      {/* Subtle grid overlay */}
       <div
-        className="absolute inset-0 opacity-60 pointer-events-none"
+        className="absolute inset-0 opacity-20 pointer-events-none"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }}
       />
       {/* Drifting particles (wind motion) */}
-      <div className="absolute inset-0 bg-particles pointer-events-none opacity-70" />
+      <div className="absolute inset-0 bg-particles pointer-events-none opacity-40" />
 
       {/* Center horizontal light beam — moves across with motion */}
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] pointer-events-none overflow-hidden">
