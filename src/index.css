@@ -159,4 +159,9 @@
     0% { transform: translateX(0%); }
     100% { transform: translateX(-50%); }
   }
+
+  @keyframes clouds-drift {
+    0% { background-position: 0% 0%; }
+    100% { background-position: -1400px 0%; }
+  }
 }
