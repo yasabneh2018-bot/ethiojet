@@ -140,7 +140,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const waitSecs = Math.ceil(waitMs / 1000);
 
   return (
-    <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] rounded-2xl overflow-hidden bg-black border border-border shadow-card">
+    <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] overflow-hidden bg-black shadow-card">
       {/* Brighter grid */}
       <div
         className="absolute inset-0 opacity-60 pointer-events-none"
@@ -152,6 +152,52 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
       />
       {/* Drifting particles (wind motion) */}
       <div className="absolute inset-0 bg-particles pointer-events-none opacity-70" />
+
+      {/* Center horizontal light beam — moves across with motion */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-y-0 w-1/3"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, hsl(0 95% 60% / 0.9), hsl(45 100% 65% / 0.95), hsl(0 95% 60% / 0.9), transparent)",
+            filter: "blur(1px) drop-shadow(0 0 8px hsl(0 95% 55% / 0.8))",
+            animation: "center-beam 3.2s linear infinite",
+          }}
+        />
+      </div>
+
+      {/* Left axis ruler — white dots moving top → bottom */}
+      <div className="absolute left-0 top-0 bottom-0 w-3 pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-x-0"
+          style={{
+            top: 0,
+            height: "200%",
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.85) 1.4px, transparent 2px)",
+            backgroundSize: "100% 28px",
+            backgroundRepeat: "repeat-y",
+            animation: "axis-dots-down 4s linear infinite",
+          }}
+        />
+      </div>
+
+      {/* Bottom axis ruler — white dots moving right → left */}
+      <div className="absolute left-0 right-0 bottom-0 h-3 pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-y-0"
+          style={{
+            left: 0,
+            width: "200%",
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.85) 1.4px, transparent 2px)",
+            backgroundSize: "28px 100%",
+            backgroundRepeat: "repeat-x",
+            animation: "axis-dots-left 4s linear infinite",
+          }}
+        />
+      </div>
+
       {/* Wind streaks */}
       {phase === "flying" && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">

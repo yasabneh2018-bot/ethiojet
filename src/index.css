@@ -144,4 +144,19 @@
     20% { opacity: 0.5; }
     100% { transform: translateX(-120%); opacity: 0; }
   }
+
+  @keyframes center-beam {
+    0% { left: -35%; }
+    100% { left: 100%; }
+  }
+
+  @keyframes axis-dots-down {
+    0% { transform: translateY(-50%); }
+    100% { transform: translateY(0%); }
+  }
+
+  @keyframes axis-dots-left {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
 }
