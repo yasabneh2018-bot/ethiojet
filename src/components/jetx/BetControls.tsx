@@ -50,16 +50,22 @@ export const BetControls = ({
     if (amount < MIN_BET_BIRR) { toast.error(`Minimum bet is ${MIN_BET_BIRR} Birr`); return; }
     if (betExceedsCap(amount)) { toast.error(`Bet too large — max possible win is ${MAX_WIN_BIRR.toLocaleString()} Birr`); return; }
     if (amount > available) { toast.error("Insufficient balance"); return; }
+    if (phase !== "waiting") {
+      // Queue for the next round via auto-bet
+      setAutoPlay(true);
+      toast.success(`Bet queued for next round · ${fmtBirr(amount)}`);
+      return;
+    }
     onPlaceBet(amount, autoCashoutOn ? autoCashout : null);
   };
 
-  const canPlace = phase === "waiting" && !hasActiveBet && amount >= MIN_BET_BIRR && amount <= available && !betExceedsCap(amount);
+  const canPlace = !hasActiveBet && amount >= MIN_BET_BIRR && amount <= available && !betExceedsCap(amount);
   const canCashout = phase === "flying" && hasActiveBet && !cashedOut;
   // Bet placed but round not yet flying → allow Cancel
   const canCancel = phase === "waiting" && hasActiveBet && !cashedOut;
 
   return (
-    <div className="bg-card/80 border border-border rounded-xl p-2 flex flex-col gap-1.5 max-w-[280px] mx-auto w-full">
+    <div className="bg-card/80 border border-border rounded-xl p-2 flex flex-col gap-1.5 max-w-[280px] w-full mr-auto">
       <div className="flex items-center gap-2">
         {/* Stepper */}
         <div className="flex items-center gap-1 bg-background/50 rounded-lg p-1 shrink-0">
@@ -112,11 +118,11 @@ export const BetControls = ({
               color: "white",
             }}
           >
-            <span>{label.toUpperCase()}</span>
+            <span>{phase === "flying" && !hasActiveBet ? "QUEUE" : label.toUpperCase()}</span>
             <span className="tabular-nums">
               {hasActiveBet
                 ? (cashedOut ? "Cashed ✓" : "In Flight")
-                : phase === "flying" ? "Wait" : <>{amount.toFixed(2)}<span className="text-xs ml-0.5">Birr</span></>}
+                : <>{amount.toFixed(2)}<span className="text-xs ml-0.5">Birr</span></>}
             </span>
           </Button>
         )}
