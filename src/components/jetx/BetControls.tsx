@@ -50,10 +50,16 @@ export const BetControls = ({
     if (amount < MIN_BET_BIRR) { toast.error(`Minimum bet is ${MIN_BET_BIRR} Birr`); return; }
     if (betExceedsCap(amount)) { toast.error(`Bet too large — max possible win is ${MAX_WIN_BIRR.toLocaleString()} Birr`); return; }
     if (amount > available) { toast.error("Insufficient balance"); return; }
+    if (phase !== "waiting") {
+      // Queue for the next round via auto-bet
+      setAutoPlay(true);
+      toast.success(`Bet queued for next round · ${fmtBirr(amount)}`);
+      return;
+    }
     onPlaceBet(amount, autoCashoutOn ? autoCashout : null);
   };
 
-  const canPlace = phase === "waiting" && !hasActiveBet && amount >= MIN_BET_BIRR && amount <= available && !betExceedsCap(amount);
+  const canPlace = !hasActiveBet && amount >= MIN_BET_BIRR && amount <= available && !betExceedsCap(amount);
   const canCashout = phase === "flying" && hasActiveBet && !cashedOut;
   // Bet placed but round not yet flying → allow Cancel
   const canCancel = phase === "waiting" && hasActiveBet && !cashedOut;
