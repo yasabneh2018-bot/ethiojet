@@ -245,17 +245,18 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         </div>
       </div>
 
-      {/* Plane: visible while flying AND parked at start during waiting/crashed */}
+      {/* Plane: visible while flying, exits fast on crash, parked during waiting */}
       {(() => {
         const isFlying = phase === "flying";
-        // Clamp so the WHOLE plane stays visible inside the canvas
+        const isCrashed = phase === "crashed";
         const PLANE_MARGIN_X = 150;
         const PLANE_MARGIN_Y_TOP = 110;
         const PLANE_MARGIN_Y_BOTTOM = 90;
         const clampedX = Math.min(VW - PLANE_MARGIN_X, Math.max(0, xEnd));
         const clampedY = Math.max(PLANE_MARGIN_Y_TOP, Math.min(VH - PLANE_MARGIN_Y_BOTTOM, yEnd));
-        const px = isFlying ? clampedX : x0;
-        const py = isFlying ? clampedY : y0;
+        // On crash: shoot off the right edge fast and fade out
+        const px = isCrashed ? VW + 350 : isFlying ? clampedX : x0;
+        const py = isCrashed ? Math.max(PLANE_MARGIN_Y_TOP, clampedY - 80) : isFlying ? clampedY : y0;
         return (
           <div
             className="absolute pointer-events-none select-none"
@@ -263,11 +264,13 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               left: `${(px / VW) * 100}%`,
               top: `${(py / VH) * 100}%`,
               width: "clamp(140px, 16vw, 230px)",
-              // Center the plane body on the envelope tip (envelope hits middle of fuselage)
-              transform: `translate(-50%, -50%) rotate(${isFlying ? planeRot : 0}deg)`,
+              transform: `translate(-50%, -50%) rotate(${isCrashed ? -8 : isFlying ? planeRot : 0}deg)`,
               transformOrigin: "left bottom",
               filter: "drop-shadow(0 8px 20px rgba(255,20,120,0.5))",
-              transition: "top 0.08s linear, left 0.08s linear",
+              opacity: isCrashed ? 0 : 1,
+              transition: isCrashed
+                ? "left 0.45s cubic-bezier(0.5,0,0.9,0.4), top 0.45s ease-out, opacity 0.5s ease-out 0.2s"
+                : "top 0.08s linear, left 0.08s linear",
             }}
           >
             <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
