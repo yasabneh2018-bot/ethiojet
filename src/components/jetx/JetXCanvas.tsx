@@ -182,7 +182,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               "radial-gradient(circle, rgba(255,255,255,0.85) 1.4px, transparent 2px)",
             backgroundSize: "100% 28px",
             backgroundRepeat: "repeat-y",
-            animation: "axis-dots-down 4s linear infinite",
+            animation: "axis-dots-down 14s linear infinite",
           }}
         />
       </div>
