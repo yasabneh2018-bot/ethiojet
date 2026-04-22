@@ -59,7 +59,7 @@ export const BetControls = ({
   const canCancel = phase === "waiting" && hasActiveBet && !cashedOut;
 
   return (
-    <div className="bg-card/80 border border-border rounded-xl p-2 flex flex-col gap-1.5 max-w-[280px] mx-auto w-full">
+    <div className="bg-card/80 border border-border rounded-xl p-2 flex flex-col gap-1.5 max-w-[280px] w-full mr-auto">
       <div className="flex items-center gap-2">
         {/* Stepper */}
         <div className="flex items-center gap-1 bg-background/50 rounded-lg p-1 shrink-0">
