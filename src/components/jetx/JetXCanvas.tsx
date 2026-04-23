@@ -345,13 +345,9 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           )}
           {phase === "flying" && (
             <div
-              className="text-5xl sm:text-7xl font-black tabular-nums"
+              className="text-5xl sm:text-7xl font-black tabular-nums text-white"
               style={{
-                background: "linear-gradient(180deg, hsl(48 100% 70%), hsl(42 100% 50%) 55%, hsl(35 95% 40%))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                filter: "drop-shadow(0 0 18px hsl(45 100% 55% / 0.7)) drop-shadow(0 2px 0 rgba(0,0,0,0.4))",
+                filter: "drop-shadow(0 0 18px rgba(255,255,255,0.55)) drop-shadow(0 2px 0 rgba(0,0,0,0.5))",
               }}
             >
               {mult.toFixed(2)}<span className="text-4xl sm:text-6xl">x</span>
