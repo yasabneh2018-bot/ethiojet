@@ -121,9 +121,9 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const xEndLimit = VW - TIP_MARGIN_X;
   const atRightEdge = phase === "flying" && rawXEnd >= xEndLimit;
 
-  // Gentle vertical bobbing — much stronger up/down sway when hugging the right edge
-  const bobAmp = atRightEdge ? 80 : 14;
-  const bobSpeed = atRightEdge ? 380 : 650;
+  // Stronger up/down sway throughout the whole flight (more dramatic at the right edge)
+  const bobAmp = atRightEdge ? 95 : 38;
+  const bobSpeed = atRightEdge ? 360 : 480;
   const bob = phase === "flying" ? Math.sin(elapsed / bobSpeed) * bobAmp : 0;
   const rawYEnd = (VH - 35) - (climbBase + climbBoost) + bob;
 
@@ -132,9 +132,11 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   // Lock plane to a fixed shallow ~3° nose-up tilt
   const planeRot = phase === "flying" ? -3 : 0;
-  // Curved trail — quadratic bezier sweeping up to the plane
-  const cx = x0 + (xEnd - x0) * 0.65;
-  const cy = y0 - (y0 - yEnd) * 0.25;
+  // Trail (red envelope) starts attached to the plane and grows behind it as it climbs.
+  // We anchor the curve's control point closer to the start so the tail hugs the plane
+  // from the very first frame instead of rising ahead of it.
+  const cx = x0 + (xEnd - x0) * 0.55;
+  const cy = y0 - (y0 - yEnd) * 0.15;
   const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${xEnd} ${yEnd}`;
   const fillPath = `${trailPath} L ${xEnd} ${VH} L ${x0} ${VH} Z`;
 
@@ -239,18 +241,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
       {/* Drifting particles (wind motion) */}
       <div className="absolute inset-0 bg-particles pointer-events-none opacity-40" />
 
-      {/* Center horizontal light beam — moves across with motion */}
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] pointer-events-none overflow-hidden">
-        <div
-          className="absolute inset-y-0 w-1/3"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, hsl(0 95% 60% / 0.9), hsl(45 100% 65% / 0.95), hsl(0 95% 60% / 0.9), transparent)",
-            filter: "blur(1px) drop-shadow(0 0 8px hsl(0 95% 55% / 0.8))",
-            animation: "center-beam 3.2s linear infinite",
-          }}
-        />
-      </div>
+      {/* Center light beam removed per request */}
 
       {/* Left axis ruler — white dots moving top → bottom */}
       <div className="absolute left-0 top-0 bottom-0 w-3 pointer-events-none overflow-hidden">
