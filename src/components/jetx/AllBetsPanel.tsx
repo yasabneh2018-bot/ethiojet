@@ -29,7 +29,13 @@ export const AllBetsPanel = () => {
         return [b, ...prev].slice(0, 100);
       });
     });
-    return unsub;
+    // Clear live bets when a new round begins (only show this round's bets)
+    const onRoundReset = () => setBets([]);
+    window.addEventListener("jetx:round-reset", onRoundReset);
+    return () => {
+      unsub();
+      window.removeEventListener("jetx:round-reset", onRoundReset);
+    };
   }, []);
 
   // Load my bet history
