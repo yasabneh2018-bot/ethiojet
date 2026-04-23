@@ -29,7 +29,12 @@ const Index = () => {
   const [phase, setPhase] = useState<GamePhase>("waiting");
   const [currentMult, setCurrentMult] = useState(1);
   const [crashMult, setCrashMult] = useState(0);
-  const [history, setHistory] = useState<number[]>([]);
+  const [history, setHistory] = useState<number[]>(() => {
+    try {
+      const raw = localStorage.getItem("jetx:history");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
   const [winEvent, setWinEvent] = useState<WinEvent | null>(null);
 
   const bet1Ref = useRef<BetSlot | null>(null);
