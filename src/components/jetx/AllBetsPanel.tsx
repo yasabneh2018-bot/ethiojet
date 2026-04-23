@@ -91,6 +91,8 @@ export const AllBetsPanel = () => {
 
   const cashedRows = rows.filter(b => b.status === "cashed");
   const totalWin = cashedRows.reduce((s, b) => s + (b.payoutBirr ?? 0), 0);
+  const maxWin = Math.max(100, totalWin * 1.2);
+  const winPct = Math.min(100, (totalWin / maxWin) * 100);
 
   const TabBtn = ({ id, label, icon: Icon }: { id: Tab; label: string; icon: any }) => (
     <button
@@ -112,13 +114,21 @@ export const AllBetsPanel = () => {
         <TabBtn id="top" label="Top" icon={Trophy} />
       </div>
 
-      <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">
-          <div className="font-semibold text-foreground">{cashedRows.length}/{rows.length} <span className="font-normal text-muted-foreground">Cashed</span></div>
+      <div className="px-3 py-2 border-b border-border space-y-1.5">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-muted-foreground">
+            <div className="font-semibold text-foreground">{cashedRows.length}/{rows.length} <span className="font-normal text-muted-foreground">Cashed</span></div>
+          </div>
+          <div className="text-right">
+            <div className="text-base font-black tabular-nums text-success">{totalWin.toFixed(2)}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total win Birr</div>
+          </div>
         </div>
-        <div className="text-right">
-          <div className="text-base font-black tabular-nums text-success">{totalWin.toFixed(2)}</div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total win Birr</div>
+        <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-success to-emerald-400 transition-all duration-500"
+            style={{ width: `${winPct}%` }}
+          />
         </div>
       </div>
 
