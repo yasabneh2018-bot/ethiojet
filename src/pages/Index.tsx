@@ -200,6 +200,8 @@ const Index = () => {
       bet1Ref.current = null; bet2Ref.current = null;
       setActive1(false); setActive2(false);
       setCashed1(false); setCashed2(false);
+      // Tell live-bets panel to clear so it only shows this round
+      window.dispatchEvent(new Event("jetx:round-reset"));
     }
   }, [settleLoss, startFlight, stopFlight, playCrash]);
 
@@ -213,7 +215,11 @@ const Index = () => {
   }, [settleWin]);
 
   const onRoundEnd = useCallback((crash: number) => {
-    setHistory(h => [crash, ...h].slice(0, 25));
+    setHistory(h => {
+      const next = [crash, ...h].slice(0, 50);
+      try { localStorage.setItem("jetx:history", JSON.stringify(next)); } catch {}
+      return next;
+    });
   }, []);
 
   if (!profile || !user) return null;
