@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
 
-// Lightweight WebAudio sound effects — no external assets needed.
+// Aviator-style WebAudio SFX — rising engine drone + impactful crash boom.
+// No external assets or API keys required.
 export const useGameSounds = () => {
   const ctxRef = useRef<AudioContext | null>(null);
   const flightRef = useRef<{
-    nodes: { osc: OscillatorNode; gain: GainNode }[];
-    masterGain: GainNode;
-    interval: number;
+    stopAll: () => void;
+    rampInterval: number;
+    startTime: number;
   } | null>(null);
 
   const getCtx = useCallback(() => {
@@ -34,125 +35,196 @@ export const useGameSounds = () => {
     const ctx = getCtx();
     if (!ctx || flightRef.current) return;
 
-    // Dreamy synthwave — warm pad + mellow bell arpeggio
-    const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(0, ctx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.6);
+    const now = ctx.currentTime;
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 2400;
-    filter.Q.value = 0.8;
-    filter.connect(masterGain).connect(ctx.destination);
+    // === Master chain ===
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0, now);
+    master.gain.linearRampToValueAtTime(0.35, now + 0.25);
 
-    // Warm pad (two detuned sines for chorus feel) — A minor root
-    const pad1 = ctx.createOscillator();
-    const pad2 = ctx.createOscillator();
-    const padGain = ctx.createGain();
-    pad1.type = "sine";
-    pad2.type = "sine";
-    pad1.frequency.value = 110;     // A2
-    pad2.frequency.value = 110.6;   // detune
-    padGain.gain.value = 0.18;
-    pad1.connect(padGain);
-    pad2.connect(padGain);
-    padGain.connect(filter);
-    pad1.start();
-    pad2.start();
+    const masterFilter = ctx.createBiquadFilter();
+    masterFilter.type = "lowpass";
+    masterFilter.frequency.setValueAtTime(900, now);
+    masterFilter.Q.value = 0.9;
+    masterFilter.connect(master).connect(ctx.destination);
 
-    const nodes: { osc: OscillatorNode; gain: GainNode }[] = [
-      { osc: pad1, gain: padGain },
-      { osc: pad2, gain: padGain },
-    ];
-
-    // Mellow bell arpeggio (A minor pentatonic, slow & dreamy)
-    const arp = [440.00, 523.25, 659.25, 783.99, 880.00, 783.99, 659.25, 523.25];
-    let step = 0;
-    const tickArp = () => {
-      const now = ctx.currentTime;
-      const f = arp[step % arp.length];
+    // === Engine drone: 3 detuned sawtooths for thick propeller/jet body ===
+    const baseFreq = 70; // low engine rumble base
+    const oscs: OscillatorNode[] = [];
+    const oscGains: GainNode[] = [];
+    [0, 0.4, -0.4].forEach((detune, i) => {
       const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.value = f;
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.09, now + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-      osc.connect(gain).connect(filter);
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.detune.setValueAtTime(detune * 12, now);
+      const g = ctx.createGain();
+      g.gain.value = i === 0 ? 0.22 : 0.14;
+      osc.connect(g).connect(masterFilter);
       osc.start(now);
-      osc.stop(now + 0.6);
+      oscs.push(osc);
+      oscGains.push(g);
+    });
 
-      // Soft shaker every other step
-      if (step % 2 === 0) {
-        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) * 0.5;
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        const sg = ctx.createGain();
-        sg.gain.value = 0.04;
-        const hp = ctx.createBiquadFilter();
-        hp.type = "highpass";
-        hp.frequency.value = 4000;
-        src.connect(hp).connect(sg).connect(ctx.destination);
-        src.start(now);
-      }
-      step++;
+    // High harmonic whine (turbine shimmer)
+    const whine = ctx.createOscillator();
+    whine.type = "square";
+    whine.frequency.setValueAtTime(baseFreq * 6, now);
+    const whineGain = ctx.createGain();
+    whineGain.gain.value = 0.025;
+    const whineHP = ctx.createBiquadFilter();
+    whineHP.type = "highpass";
+    whineHP.frequency.value = 600;
+    whine.connect(whineHP).connect(whineGain).connect(master);
+    whine.start(now);
+
+    // Continuous wind/air noise
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * 0.6;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    noise.loop = true;
+    const noiseBP = ctx.createBiquadFilter();
+    noiseBP.type = "bandpass";
+    noiseBP.frequency.setValueAtTime(800, now);
+    noiseBP.Q.value = 0.7;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.08;
+    noise.connect(noiseBP).connect(noiseGain).connect(master);
+    noise.start(now);
+
+    // === Tension ramp: pitch + filter open + intensity grow over time ===
+    const startTime = performance.now();
+    const rampInterval = window.setInterval(() => {
+      if (!ctxRef.current) return;
+      const t = ctxRef.current.currentTime;
+      const elapsed = (performance.now() - startTime) / 1000;
+      // Logarithmic-ish rise that keeps climbing
+      const climb = Math.min(elapsed / 12, 1); // 0..1 over ~12s, then sustains
+      const extra = Math.log2(1 + elapsed / 4) * 0.5; // keeps rising slowly after
+      const pitchMul = 1 + climb * 2.2 + extra; // up to ~3.5x+
+      const targetFreq = baseFreq * pitchMul;
+      oscs.forEach(o => o.frequency.linearRampToValueAtTime(targetFreq, t + 0.15));
+      whine.frequency.linearRampToValueAtTime(targetFreq * 6 + elapsed * 40, t + 0.15);
+      masterFilter.frequency.linearRampToValueAtTime(900 + climb * 4500 + extra * 800, t + 0.15);
+      noiseBP.frequency.linearRampToValueAtTime(800 + climb * 2200, t + 0.15);
+      noiseGain.gain.linearRampToValueAtTime(0.08 + climb * 0.12, t + 0.15);
+      whineGain.gain.linearRampToValueAtTime(0.025 + climb * 0.05, t + 0.15);
+    }, 120);
+
+    const stopAll = () => {
+      const ctxNow = ctxRef.current?.currentTime ?? 0;
+      master.gain.cancelScheduledValues(ctxNow);
+      master.gain.linearRampToValueAtTime(0, ctxNow + 0.18);
+      try { oscs.forEach(o => o.stop(ctxNow + 0.22)); } catch {}
+      try { whine.stop(ctxNow + 0.22); } catch {}
+      try { noise.stop(ctxNow + 0.22); } catch {}
     };
-    tickArp();
-    const interval = window.setInterval(tickArp, 280);
 
-    flightRef.current = { nodes, masterGain, interval };
+    flightRef.current = { stopAll, rampInterval, startTime };
   }, [getCtx]);
 
   const stopFlight = useCallback(() => {
-    const ctx = getCtx();
-    if (!ctx || !flightRef.current) return;
-    const { nodes, masterGain, interval } = flightRef.current;
-    window.clearInterval(interval);
-    masterGain.gain.cancelScheduledValues(ctx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
-    nodes.forEach(({ osc }) => {
-      try { osc.stop(ctx.currentTime + 0.3); } catch {}
-    });
+    if (!flightRef.current) return;
+    window.clearInterval(flightRef.current.rampInterval);
+    flightRef.current.stopAll();
     flightRef.current = null;
-  }, [getCtx]);
+  }, []);
 
   const playCrash = useCallback(() => {
     const ctx = getCtx();
     if (!ctx) return;
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
+
+    // Stop engine instantly if still running
+    if (flightRef.current) {
+      window.clearInterval(flightRef.current.rampInterval);
+      flightRef.current.stopAll();
+      flightRef.current = null;
+    }
+
+    const now = ctx.currentTime;
+
+    // === Sub boom (impact thump) ===
+    const sub = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    sub.type = "sine";
+    sub.frequency.setValueAtTime(140, now);
+    sub.frequency.exponentialRampToValueAtTime(35, now + 0.5);
+    subGain.gain.setValueAtTime(0.9, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+    sub.connect(subGain).connect(ctx.destination);
+    sub.start(now);
+    sub.stop(now + 0.75);
+
+    // === Explosion noise burst ===
+    const burstLen = 1.2;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * burstLen, ctx.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / data.length;
+      // Sharp attack, exponential decay
+      const env = Math.pow(1 - t, 2.2);
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(1800, ctx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.5);
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-    src.connect(filter).connect(gain).connect(ctx.destination);
-    src.start();
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(3500, now);
+    lp.frequency.exponentialRampToValueAtTime(180, now + 0.9);
+    const burstGain = ctx.createGain();
+    burstGain.gain.setValueAtTime(0.7, now);
+    burstGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+    src.connect(lp).connect(burstGain).connect(ctx.destination);
+    src.start(now);
+
+    // === Metallic crunch (bandpassed noise click) ===
+    const crunchBuf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+    const cd = crunchBuf.getChannelData(0);
+    for (let i = 0; i < cd.length; i++) cd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / cd.length, 1.5);
+    const csrc = ctx.createBufferSource();
+    csrc.buffer = crunchBuf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 2200;
+    bp.Q.value = 1.2;
+    const cg = ctx.createGain();
+    cg.gain.setValueAtTime(0.5, now);
+    cg.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    csrc.connect(bp).connect(cg).connect(ctx.destination);
+    csrc.start(now);
   }, [getCtx]);
 
   const playCashout = useCallback(() => {
     const ctx = getCtx();
     if (!ctx) return;
-    const notes = [880, 1175, 1568];
+    const notes = [880, 1175, 1568, 2093];
     notes.forEach((f, i) => {
+      const t0 = ctx.currentTime + i * 0.07;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.08);
-      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.08);
-      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.08 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.35);
+      osc.frequency.setValueAtTime(f, t0);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(0.22, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.4);
       osc.connect(gain).connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.08);
-      osc.stop(ctx.currentTime + i * 0.08 + 0.4);
+      osc.start(t0);
+      osc.stop(t0 + 0.45);
     });
+    // Coin shimmer
+    const shimBuf = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
+    const sd = shimBuf.getChannelData(0);
+    for (let i = 0; i < sd.length; i++) sd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / sd.length, 2);
+    const ssrc = ctx.createBufferSource();
+    ssrc.buffer = shimBuf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 5000;
+    const sg = ctx.createGain();
+    sg.gain.value = 0.08;
+    ssrc.connect(hp).connect(sg).connect(ctx.destination);
+    ssrc.start(ctx.currentTime);
   }, [getCtx]);
 
   return { startFlight, stopFlight, playCrash, playCashout };
