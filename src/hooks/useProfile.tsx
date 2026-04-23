@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
@@ -14,23 +14,28 @@ export interface Profile {
 // ---- Shared profile store (singleton) so optimistic updates propagate
 // to every component that calls useProfile() (e.g. header balance).
 let currentProfile: Profile | null = null;
-const listeners = new Set<() => void>();
-const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
-const getSnapshot = () => currentProfile;
+const listeners = new Set<(p: Profile | null) => void>();
 const setProfileGlobal = (p: Profile | null) => {
   currentProfile = p;
-  listeners.forEach(l => l());
+  listeners.forEach(l => l(p));
 };
 const patchProfileGlobal = (patch: Partial<Profile>) => {
   if (!currentProfile) return;
   currentProfile = { ...currentProfile, ...patch };
-  listeners.forEach(l => l());
+  listeners.forEach(l => l(currentProfile));
 };
 
 export const useProfile = () => {
   const { user } = useAuth();
-  const profile = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const [profile, setProfile] = useState<Profile | null>(currentProfile);
   const [loading, setLoading] = useState(true);
+
+  // Subscribe this component to the shared store
+  useEffect(() => {
+    const l = (p: Profile | null) => setProfile(p);
+    listeners.add(l);
+    return () => { listeners.delete(l); };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user) { setProfileGlobal(null); setLoading(false); return; }
