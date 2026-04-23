@@ -268,17 +268,17 @@ const Index = () => {
         )}
       </div>
 
-      {/* Floating chat toggle */}
+      {/* Chat toggle — top-right, just under header/balance */}
       <button
         onClick={() => setChatOpen(o => !o)}
-        className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary-glow shadow-glow flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform"
+        className="fixed top-16 right-3 z-40 w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-glow shadow-glow flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform"
         aria-label="Toggle chat"
       >
-        <MessageCircle className="w-6 h-6" />
+        <MessageCircle className="w-5 h-5" />
       </button>
       {/* Mobile chat overlay */}
       {chatOpen && (
-        <div className="lg:hidden fixed bottom-24 right-5 z-40 w-[320px] h-[480px] max-h-[70vh] shadow-2xl rounded-2xl overflow-hidden border border-border">
+        <div className="lg:hidden fixed top-28 right-3 z-40 w-[320px] h-[420px] max-h-[70vh] shadow-2xl rounded-2xl overflow-hidden border border-border">
           <InlineChat />
         </div>
       )}
