@@ -65,23 +65,23 @@ export const BetControls = ({
   const canCancel = phase === "waiting" && hasActiveBet && !cashedOut;
 
   return (
-    <div className="bg-card/80 border border-border rounded-xl p-2 flex flex-col gap-1.5 max-w-[280px] w-full mr-auto">
-      <div className="flex items-center gap-2">
+    <div className="bg-card/80 border border-border rounded-xl p-1.5 flex flex-col gap-1.5 max-w-[280px] w-full mr-auto overflow-hidden">
+      <div className="flex items-center gap-1.5 min-w-0">
         {/* Stepper */}
-        <div className="flex items-center gap-1 bg-background/50 rounded-lg p-1 shrink-0">
-          <Button size="icon" variant="ghost" onClick={() => adjust(-1)} className="h-9 w-9">
-            <Minus className="w-4 h-4" />
+        <div className="flex items-center gap-0.5 bg-background/50 rounded-lg p-0.5 shrink-0">
+          <Button size="icon" variant="ghost" onClick={() => adjust(-1)} className="h-8 w-7">
+            <Minus className="w-3.5 h-3.5" />
           </Button>
           <Input
             type="number"
             value={amount}
             onChange={e => setAmount(Math.max(0, +e.target.value))}
-            className="text-center text-base font-bold tabular-nums bg-transparent border-0 h-9 w-20 px-1 focus-visible:ring-0"
+            className="text-center text-sm font-bold tabular-nums bg-transparent border-0 h-8 w-12 px-0 focus-visible:ring-0"
             min={MIN_BET_BIRR}
             step={1}
           />
-          <Button size="icon" variant="ghost" onClick={() => adjust(1)} className="h-9 w-9">
-            <Plus className="w-4 h-4" />
+          <Button size="icon" variant="ghost" onClick={() => adjust(1)} className="h-8 w-7">
+            <Plus className="w-3.5 h-3.5" />
           </Button>
         </div>
 
@@ -89,7 +89,7 @@ export const BetControls = ({
         {canCashout ? (
           <Button
             onClick={onCashout}
-            className="flex-1 h-11 text-sm font-black rounded-xl flex items-center justify-center gap-2 leading-none border-0"
+            className="flex-1 min-w-0 h-9 text-xs font-black rounded-lg flex items-center justify-center gap-1 leading-none border-0 px-2"
             style={{
               background: "linear-gradient(180deg, hsl(45 100% 55%), hsl(38 95% 45%))",
               color: "hsl(30 60% 15%)",
@@ -97,20 +97,19 @@ export const BetControls = ({
             }}
           >
             <span>CASH OUT</span>
-            <span className="tabular-nums">{(amount * currentMult).toFixed(2)}<span className="text-xs ml-0.5">Birr</span></span>
+            <span className="tabular-nums truncate">{(amount * currentMult).toFixed(2)}<span className="text-[10px] ml-0.5">Birr</span></span>
           </Button>
         ) : canCancel ? (
           <Button
             onClick={onCancelBet}
-            className="flex-1 h-11 text-sm font-black rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="flex-1 min-w-0 h-9 text-xs font-black rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 px-2"
           >
             CANCEL
           </Button>
         ) : (
           <Button
-            disabled={!canPlace}
             onClick={tryPlace}
-            className="flex-1 h-11 text-sm font-black rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 leading-none border-0"
+            className="flex-1 min-w-0 h-9 text-xs font-black rounded-lg flex items-center justify-center gap-1 leading-none border-0 px-2 disabled:opacity-50"
             style={{
               background: canPlace
                 ? "linear-gradient(180deg, hsl(142 76% 50%), hsl(142 76% 38%))"
@@ -119,10 +118,10 @@ export const BetControls = ({
             }}
           >
             <span>{phase === "flying" && !hasActiveBet ? "QUEUE" : label.toUpperCase()}</span>
-            <span className="tabular-nums">
+            <span className="tabular-nums truncate">
               {hasActiveBet
-                ? (cashedOut ? "Cashed ✓" : "In Flight")
-                : <>{amount.toFixed(2)}<span className="text-xs ml-0.5">Birr</span></>}
+                ? (cashedOut ? "✓" : "Flying")
+                : <>{amount.toFixed(2)}<span className="text-[10px] ml-0.5">Birr</span></>}
             </span>
           </Button>
         )}
