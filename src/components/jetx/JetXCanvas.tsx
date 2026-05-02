@@ -132,13 +132,19 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   // Lock plane to a fixed shallow ~3° nose-up tilt
   const planeRot = phase === "flying" ? -3 : 0;
-  // Trail (red envelope) starts attached to the plane and grows behind it as it climbs.
-  // We anchor the curve's control point closer to the start so the tail hugs the plane
-  // from the very first frame instead of rising ahead of it.
-  const cx = x0 + (xEnd - x0) * 0.55;
-  const cy = y0 - (y0 - yEnd) * 0.15;
-  const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${xEnd} ${yEnd}`;
-  const fillPath = `${trailPath} L ${xEnd} ${VH} L ${x0} ${VH} Z`;
+  // Trail (red envelope) ends exactly where the plane body sits.
+  // Plane is positioned at (px, py) with translate(-33%, -50%) and width ~16vw.
+  // Its visual body center sits roughly at (px - planeW*0.17, py). We tuck the
+  // trail tip slightly *into* the plane belly so there's never a visible gap,
+  // even at the very start when the multiplier is low.
+  // Approx plane width in viewBox units (clamp(140px, 16vw, 230px) → ~14% of VW)
+  const planeVW = VW * 0.14;
+  const tipX = xEnd - planeVW * 0.18; // tuck into the body
+  const tipY = yEnd + 8;              // sit just under the fuselage
+  const cx = x0 + (tipX - x0) * 0.55;
+  const cy = y0 - (y0 - tipY) * 0.15;
+  const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${tipX} ${tipY}`;
+  const fillPath = `${trailPath} L ${tipX} ${VH} L ${x0} ${VH} Z`;
 
   const waitProgress = 1 - waitMs / (WAIT_SECONDS * 1000);
   const waitSecs = Math.ceil(waitMs / 1000);
