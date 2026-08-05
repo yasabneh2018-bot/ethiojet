@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
-import { useGameSounds } from "@/hooks/useGameSounds";
 import { JetXCanvas, type GamePhase } from "@/components/jetx/JetXCanvas";
 import { BetControls } from "@/components/jetx/BetControls";
 import { TournamentBanner } from "@/components/jetx/TournamentBanner";
@@ -10,7 +9,7 @@ import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
 import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
 import { InlineChat } from "@/components/jetx/InlineChat";
 import { MessageCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { addScore, insertBet, updateProfile } from "@/lib/localDb";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
 import { broadcastBet } from "@/lib/liveBets";
 import { toast } from "sonner";
@@ -24,7 +23,6 @@ interface BetSlot {
 const Index = () => {
   const { user } = useAuth();
   const { profile, refresh, setLocal } = useProfile();
-  const { startFlight, stopFlight, playCrash, playCashout } = useGameSounds();
 
   const [phase, setPhase] = useState<GamePhase>("waiting");
   const [currentMult, setCurrentMult] = useState(1);
@@ -65,8 +63,6 @@ const Index = () => {
     const newBalance = profile.balance - amountCoins;
     setLocal({ balance: newBalance });
 
-    (supabase as any).from("profiles").update({ balance: newBalance }).eq("id", user.id);
-
     const slotData: BetSlot = { amountBirr, autoCashout, cashed: false };
     if (slot === 1) { bet1Ref.current = slotData; setActive1(true); setCashed1(false); }
     else { bet2Ref.current = slotData; setActive2(true); setCashed2(false); }
@@ -89,7 +85,6 @@ const Index = () => {
     const refundCoins = birrToCoins(ref.amountBirr);
     const newBalance = profile.balance + refundCoins;
     setLocal({ balance: newBalance });
-    (supabase as any).from("profiles").update({ balance: newBalance }).eq("id", user.id);
     if (slot === 1) { bet1Ref.current = null; setActive1(false); setCashed1(false); }
     else { bet2Ref.current = null; setActive2(false); setCashed2(false); }
     toast.info(`Bet ${slot} cancelled · refunded ${fmtBirr(ref.amountBirr)}`);
@@ -116,7 +111,6 @@ const Index = () => {
 
     // Show green win banner + cashout sound
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
-    playCashout();
     broadcastBet({
       id: `${user.id}-cash-${Date.now()}`,
       user_id: user.id,
@@ -128,29 +122,16 @@ const Index = () => {
       ts: Date.now(),
     });
 
-    await (supabase as any).from("profiles").update({
-      balance: newBalance,
-      total_wagered: newWagered,
-      xp: newXp,
-    }).eq("id", user.id);
-
-    await (supabase as any).from("bets").insert({
-      user_id: user.id, amount: amountCoins,
+    insertBet({
+      user_id: user.id, username: profile.username, amount: amountCoins,
       cashout_multiplier: cappedMult, crash_multiplier: crashMult || cappedMult,
       payout: payoutCoins, won: true,
     });
 
     const t = getTournamentInfo();
-    if (t.isActive) {
-      const { data: existing } = await (supabase as any)
-        .from("tournament_scores").select("profit").eq("user_id", user.id).eq("tournament_key", t.key).maybeSingle();
-      const newProfit = (existing ? Number(existing.profit) : 0) + birrToCoins(profitBirr);
-      await (supabase as any).from("tournament_scores").upsert({
-        user_id: user.id, tournament_key: t.key, profit: newProfit, updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id,tournament_key" });
-    }
+    if (t.isActive) addScore(user.id, profile.username, t.key, birrToCoins(profitBirr));
     refresh();
-  }, [crashMult, profile, wagered, xp, user, refresh, setLocal, playCashout]);
+  }, [crashMult, profile, wagered, xp, user, refresh, setLocal]);
 
   const settleLoss = useCallback(async (slot: 1 | 2) => {
     const ref = slot === 1 ? bet1Ref.current : bet2Ref.current;
@@ -162,24 +143,13 @@ const Index = () => {
     const newXp = xp + xpGain;
     setLocal({ total_wagered: newWagered, xp: newXp });
 
-    await (supabase as any).from("profiles").update({
-      total_wagered: newWagered,
-      xp: newXp,
-    }).eq("id", user.id);
-    await (supabase as any).from("bets").insert({
-      user_id: user.id, amount: amountCoins,
+    insertBet({
+      user_id: user.id, username: profile.username, amount: amountCoins,
       cashout_multiplier: null, crash_multiplier: crashMult,
       payout: 0, won: false,
     });
     const t = getTournamentInfo();
-    if (t.isActive) {
-      const { data: existing } = await (supabase as any)
-        .from("tournament_scores").select("profit").eq("user_id", user.id).eq("tournament_key", t.key).maybeSingle();
-      const newProfit = (existing ? Number(existing.profit) : 0) - amountCoins;
-      await (supabase as any).from("tournament_scores").upsert({
-        user_id: user.id, tournament_key: t.key, profit: newProfit, updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id,tournament_key" });
-    }
+    if (t.isActive) addScore(user.id, profile.username, t.key, -amountCoins);
     refresh();
   }, [crashMult, profile, wagered, xp, user, refresh, setLocal]);
 
@@ -187,23 +157,17 @@ const Index = () => {
     setPhase(p);
     setCurrentMult(mult);
     if (cm) setCrashMult(cm);
-    if (p === "flying") {
-      startFlight();
-    }
     if (p === "crashed") {
-      stopFlight();
-      playCrash();
       settleLoss(1); settleLoss(2);
     }
     if (p === "waiting") {
-      stopFlight();
       bet1Ref.current = null; bet2Ref.current = null;
       setActive1(false); setActive2(false);
       setCashed1(false); setCashed2(false);
       // Tell live-bets panel to clear so it only shows this round
       window.dispatchEvent(new Event("jetx:round-reset"));
     }
-  }, [settleLoss, startFlight, stopFlight, playCrash]);
+  }, [settleLoss]);
 
   const onTick = useCallback((m: number) => {
     setCurrentMult(m);
