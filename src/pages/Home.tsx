@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
-import { supabase } from "@/integrations/supabase/client";
+import { topProfiles, subscribeDb } from "@/lib/localDb";
 import { coinsToBirr, fmtBirr } from "@/lib/jetx";
 import { Button } from "@/components/ui/button";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet, Trophy, Play, Crown, Timer } from "lucide-react";
@@ -23,14 +23,9 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("username,total_wagered")
-        .order("total_wagered", { ascending: false })
-        .limit(5);
-      if (data) setTop(data);
-    })();
+    const load = () => setTop(topProfiles(5));
+    load();
+    return subscribeDb(load);
   }, []);
 
   if (!profile) return null;
