@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Users, User as UserIcon, Trophy } from "lucide-react";
 import { subscribeBets, type LiveBet } from "@/lib/liveBets";
-import { supabase } from "@/integrations/supabase/client";
 import { coinsToBirr } from "@/lib/jetx";
+import { getBets, getUserBets, subscribeDb } from "@/lib/localDb";
 
 type Tab = "all" | "mine" | "top";
 
@@ -29,7 +29,6 @@ export const AllBetsPanel = () => {
         return [b, ...prev].slice(0, 100);
       });
     });
-    // Clear live bets when a new round begins (only show this round's bets)
     const onRoundReset = () => setBets([]);
     window.addEventListener("jetx:round-reset", onRoundReset);
     return () => {
@@ -38,43 +37,38 @@ export const AllBetsPanel = () => {
     };
   }, []);
 
-  // Load my bet history
+  // My bets + top winners, from local storage
   useEffect(() => {
-    (async () => {
-      if (!user) return;
-      const { data } = await (supabase as any)
-        .from("bets").select("id,user_id,amount,cashout_multiplier,payout,won,created_at")
-        .eq("user_id", user.id).order("created_at", { ascending: false }).limit(50);
-      if (data) {
-        setHistoryMine(data.map((r: any) => ({
+    const load = () => {
+      if (user) {
+        setHistoryMine(getUserBets(user.id, 50).map(r => ({
           id: `db-${r.id}`, user_id: r.user_id, username: "you",
           amountBirr: coinsToBirr(r.amount),
           cashout: r.cashout_multiplier, payoutBirr: coinsToBirr(r.payout),
-          status: r.won ? "cashed" as const : "lost" as const,
+          status: r.won ? ("cashed" as const) : ("lost" as const),
           ts: new Date(r.created_at).getTime(),
         })));
+      } else {
+        setHistoryMine([]);
       }
-    })();
+      setHistoryTop(
+        getBets()
+          .filter(r => r.won)
+          .sort((a, b) => b.payout - a.payout)
+          .slice(0, 30)
+          .map(r => ({
+            id: `dbt-${r.id}`, user_id: r.user_id, username: r.username,
+            amountBirr: coinsToBirr(r.amount),
+            cashout: r.cashout_multiplier, payoutBirr: coinsToBirr(r.payout),
+            status: "cashed" as const, ts: new Date(r.created_at).getTime(),
+          }))
+      );
+    };
+    load();
+    return subscribeDb(load);
   }, [user]);
 
-  // Load top winners
-  useEffect(() => {
-    (async () => {
-      const { data } = await (supabase as any)
-        .from("bets").select("id,user_id,amount,cashout_multiplier,payout,profiles(username)")
-        .eq("won", true).order("payout", { ascending: false }).limit(30);
-      if (data) {
-        setHistoryTop(data.map((r: any) => ({
-          id: `dbt-${r.id}`, user_id: r.user_id, username: r.profiles?.username ?? "player",
-          amountBirr: coinsToBirr(r.amount),
-          cashout: r.cashout_multiplier, payoutBirr: coinsToBirr(r.payout),
-          status: "cashed" as const, ts: Date.now(),
-        })));
-      }
-    })();
-  }, [tab]);
-
-  // Auto-clear placed bets after 60s if not cashed (assume lost)
+  // Auto-mark placed bets as lost after 60s
   useEffect(() => {
     const i = setInterval(() => {
       setBets(prev => prev.map(b =>

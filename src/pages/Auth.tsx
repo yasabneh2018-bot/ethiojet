@@ -4,26 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Plane } from "lucide-react";
 
-// Convert phone to a synthetic email so we can use email/password auth
-// without sending OTP/SMS or email confirmation. Play-money demo only.
-const phoneToEmail = (phone: string) => {
-  const digits = phone.replace(/\D/g, "");
-  return `${digits}@jetx.player`;
-};
-
-const normalizePhone = (raw: string) => {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length < 7) return null;
-  return digits;
-};
-
 const Auth = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signIn, signUp } = useAuth();
   const nav = useNavigate();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -32,47 +18,22 @@ const Auth = () => {
 
   if (!loading && user) return <Navigate to="/" replace />;
 
-  const signIn = async (e: React.FormEvent) => {
+  const doSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    const norm = normalizePhone(phone);
-    if (!norm) { toast.error("Enter a valid phone number"); return; }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: phoneToEmail(norm), password,
-    });
+    const { error } = signIn(phone, password);
     setBusy(false);
-    if (error) toast.error("Invalid phone or password");
+    if (error) toast.error(error);
     else { toast.success("Welcome back, pilot!"); nav("/"); }
   };
 
-  const signUp = async (e: React.FormEvent) => {
+  const doSignUp = (e: React.FormEvent) => {
     e.preventDefault();
-    const norm = normalizePhone(phone);
-    if (!norm) { toast.error("Enter a valid phone number"); return; }
-    if (password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setBusy(true);
-    const uname = username.trim() || `pilot_${norm.slice(-4)}`;
-    const { error } = await supabase.auth.signUp({
-      email: phoneToEmail(norm),
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { username: uname, phone: norm },
-      },
-    });
-    if (error) {
-      setBusy(false);
-      toast.error(error.message.includes("registered") ? "Phone already registered" : error.message);
-      return;
-    }
-    // Auto-confirm is on, but session may need a sign-in if confirm flow returned without session
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
-      await supabase.auth.signInWithPassword({ email: phoneToEmail(norm), password });
-    }
+    const { error } = signUp(phone, password, username);
     setBusy(false);
-    toast.success("Account created! 1000 free coins 🎉");
-    nav("/");
+    if (error) toast.error(error);
+    else { toast.success("Account created! 1000 free coins 🎉"); nav("/"); }
   };
 
   return (
@@ -82,7 +43,7 @@ const Auth = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-jet shadow-glow mb-3">
             <Plane className="w-9 h-9 text-primary-foreground" fill="currentColor" />
           </div>
-          <h1 className="text-4xl font-black text-gradient-jet glow-text">JetX</h1>
+          <h1 className="text-4xl font-black text-gradient-jet glow-text">Aviator</h1>
           <p className="text-muted-foreground text-sm mt-1">Cash out before the jet flies away</p>
         </div>
         <div className="bg-gradient-card border border-border rounded-2xl p-5 shadow-card">
@@ -93,17 +54,11 @@ const Auth = () => {
             </TabsList>
 
             <TabsContent value="signin">
-              <form onSubmit={signIn} className="space-y-3">
+              <form onSubmit={doSignIn} className="space-y-3">
                 <div>
                   <Label>Phone number</Label>
-                  <Input
-                    type="tel"
-                    inputMode="tel"
-                    placeholder="e.g. +254 712 345 678"
-                    required
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                  />
+                  <Input type="tel" inputMode="tel" placeholder="e.g. 0941815119" required
+                    value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
                 <div>
                   <Label>Password</Label>
@@ -116,21 +71,15 @@ const Auth = () => {
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={signUp} className="space-y-3">
+              <form onSubmit={doSignUp} className="space-y-3">
                 <div>
                   <Label>Pilot name</Label>
                   <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="ace_pilot" />
                 </div>
                 <div>
                   <Label>Phone number</Label>
-                  <Input
-                    type="tel"
-                    inputMode="tel"
-                    placeholder="e.g. +254 712 345 678"
-                    required
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                  />
+                  <Input type="tel" inputMode="tel" placeholder="e.g. 0912345678" required
+                    value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
                 <div>
                   <Label>Password</Label>
@@ -143,7 +92,7 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
           <p className="text-[11px] text-muted-foreground text-center mt-4">
-            Play-money demo · No SMS or email verification
+            Offline play-money demo · data is stored on this device only
           </p>
         </div>
       </div>

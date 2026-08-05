@@ -15,6 +15,7 @@ import Level from "./pages/Level.tsx";
 import Deposit from "./pages/Deposit.tsx";
 import Withdraw from "./pages/Withdraw.tsx";
 import History from "./pages/History.tsx";
+import Admin from "./pages/Admin.tsx";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/deposit" element={<Deposit />} />
               <Route path="/withdraw" element={<Withdraw />} />
               <Route path="/history" element={<History />} />
+              <Route path="/admin" element={<Admin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

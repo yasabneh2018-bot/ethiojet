@@ -4,52 +4,64 @@ import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowDownToLine, History as HistoryIcon } from "lucide-react";
+import { ArrowDownToLine, History as HistoryIcon, Upload } from "lucide-react";
 import { birrToCoins, coinsToBirr, fmtBirr } from "@/lib/jetx";
+import {
+  PAYMENT_METHODS, createTransaction, getUserTransactions, subscribeDb,
+  type LocalTx, type PaymentMethod,
+} from "@/lib/localDb";
 
-interface Tx {
-  id: string;
-  type: string;
-  amount: number;
-  created_at: string;
-}
+const StatusChip = ({ status }: { status: LocalTx["status"] }) => {
+  const map = {
+    pending: "bg-yellow-500/20 text-yellow-400",
+    approved: "bg-success/20 text-success",
+    rejected: "bg-destructive/20 text-destructive",
+  } as const;
+  return <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${map[status]}`}>{status}</span>;
+};
 
 const Deposit = () => {
   const { user } = useAuth();
-  const { profile, refresh } = useProfile();
+  const { profile } = useProfile();
   const [amount, setAmount] = useState(100);
+  const [method, setMethod] = useState<PaymentMethod>("telebirr");
+  const [account, setAccount] = useState("");
+  const [proof, setProof] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [history, setHistory] = useState<Tx[]>([]);
+  const [history, setHistory] = useState<LocalTx[]>([]);
 
-  const loadHistory = async () => {
+  const load = () => {
     if (!user) return;
-    const { data } = await (supabase as any)
-      .from("transactions")
-      .select("id,type,amount,created_at")
-      .eq("user_id", user.id)
-      .eq("type", "deposit")
-      .order("amount", { ascending: false })
-      .limit(50);
-    if (data) setHistory(data);
+    setHistory([...getUserTransactions(user.id, "deposit")].sort((a, b) => b.amount - a.amount));
   };
 
-  useEffect(() => { loadHistory(); /* eslint-disable-next-line */ }, [user?.id]);
+  useEffect(() => { load(); return subscribeDb(load); /* eslint-disable-next-line */ }, [user?.id]);
 
   if (!user || !profile) return null;
+  const active = PAYMENT_METHODS.find(m => m.id === method)!;
 
-  const submit = async () => {
-    if (amount <= 0) return;
+  const pickFile = (file?: File) => {
+    if (!file) return;
+    if (file.size > 2_000_000) { toast.error("Image too large (max 2MB)"); return; }
+    const reader = new FileReader();
+    reader.onload = () => setProof(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+
+  const submit = () => {
+    if (amount <= 0) { toast.error("Enter an amount"); return; }
+    if (!account.trim()) { toast.error("Enter the account/phone you paid from"); return; }
+    if (!proof) { toast.error("Upload your payment proof"); return; }
     setBusy(true);
-    const newBalance = profile.balance + birrToCoins(amount);
-    const { error: e1 } = await (supabase as any).from("profiles").update({ balance: newBalance }).eq("id", user.id);
-    const { error: e2 } = await (supabase as any).from("transactions").insert({ user_id: user.id, type: "deposit", amount: birrToCoins(amount) });
+    createTransaction({
+      user_id: user.id, username: profile.username, phone: user.phone,
+      type: "deposit", amount: birrToCoins(amount), method, account: account.trim(), proof,
+    });
     setBusy(false);
-    if (e1 || e2) { toast.error("Failed"); return; }
-    toast.success(`Deposited ${fmtBirr(amount)}`);
-    refresh();
-    loadHistory();
+    setProof(null);
+    setAccount("");
+    toast.success("Deposit request sent — waiting for admin approval");
   };
 
   return (
@@ -60,13 +72,35 @@ const Deposit = () => {
         </div>
         <div>
           <h2 className="text-2xl font-black">Deposit</h2>
-          <p className="text-sm text-muted-foreground">Add virtual Birr to your wallet</p>
+          <p className="text-sm text-muted-foreground">Pay, upload proof, admin approves</p>
         </div>
       </div>
+
       <div className="bg-gradient-card border border-border rounded-2xl p-6 shadow-card space-y-4">
         <div className="text-xs text-muted-foreground bg-secondary/60 rounded-lg p-3">
-          💎 Play-money demo. No real money involved. Current balance: <strong>{fmtBirr(coinsToBirr(profile.balance))}</strong>
+          Current balance: <strong>{fmtBirr(coinsToBirr(profile.balance))}</strong>
         </div>
+
+        <div className="space-y-2">
+          <Label>Payment method</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {PAYMENT_METHODS.map(m => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMethod(m.id)}
+                className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+                  method === m.id ? "border-primary bg-primary/10 text-primary-glow" : "border-border bg-secondary/40"
+                }`}
+              >
+                <div className="font-bold">{m.label}</div>
+                <div className="text-[11px] text-muted-foreground tabular-nums">{m.account}</div>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">{active.hint}</p>
+        </div>
+
         <div className="space-y-2">
           <Label>Amount (Birr)</Label>
           <Input type="number" value={amount} onChange={e => setAmount(+e.target.value)} min={1} />
@@ -76,12 +110,27 @@ const Deposit = () => {
             ))}
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label>Your {active.label} account / phone</Label>
+          <Input value={account} onChange={e => setAccount(e.target.value)} placeholder="Account you paid from" />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Payment proof (screenshot)</Label>
+          <label className="flex items-center gap-2 rounded-xl border border-dashed border-border p-3 cursor-pointer hover:bg-secondary/40">
+            <Upload className="w-4 h-4 text-primary-glow" />
+            <span className="text-sm text-muted-foreground">{proof ? "Change image" : "Choose image"}</span>
+            <input type="file" accept="image/*" className="hidden" onChange={e => pickFile(e.target.files?.[0])} />
+          </label>
+          {proof && <img src={proof} alt="Payment proof preview" className="max-h-40 rounded-lg border border-border" />}
+        </div>
+
         <Button onClick={submit} disabled={busy} className="w-full bg-gradient-jet text-primary-foreground h-12 font-bold">
-          Confirm deposit
+          Submit deposit request
         </Button>
       </div>
 
-      {/* Deposit history — descending by amount */}
       <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card">
         <div className="flex items-center gap-2 mb-3">
           <HistoryIcon className="w-4 h-4 text-primary-glow" />
@@ -95,14 +144,12 @@ const Deposit = () => {
             {history.map(tx => (
               <div key={tx.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center py-2 text-xs">
                 <div className="truncate text-muted-foreground">
-                  {new Date(tx.created_at).toLocaleString()}
+                  {new Date(tx.created_at).toLocaleString()} · {tx.method}
                 </div>
                 <div className="tabular-nums text-right font-bold text-success">
-                  +{fmtBirr(coinsToBirr(Number(tx.amount)))}
+                  +{fmtBirr(coinsToBirr(tx.amount))}
                 </div>
-                <div className="text-right">
-                  <span className="px-1.5 py-0.5 rounded bg-success/20 text-success text-[10px] font-bold">DONE</span>
-                </div>
+                <div className="text-right"><StatusChip status={tx.status} /></div>
               </div>
             ))}
           </div>
