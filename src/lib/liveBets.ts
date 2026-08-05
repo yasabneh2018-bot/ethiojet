@@ -1,34 +1,34 @@
-import { supabase } from "@/integrations/supabase/client";
-
+// Cross-tab live bet feed — BroadcastChannel, no backend.
 export interface LiveBet {
   id: string;
   user_id: string;
   username: string;
   amountBirr: number;
-  cashout?: number | null; // multiplier when cashed
+  cashout?: number | null;
   payoutBirr?: number;
   status: "placed" | "cashed" | "lost";
   ts: number;
 }
 
-const CHANNEL = "live-bets-v1";
+const CHANNEL = "jetx-live-bets";
 
-let channel: ReturnType<typeof supabase.channel> | null = null;
+let bc: BroadcastChannel | null = null;
 const listeners = new Set<(b: LiveBet) => void>();
 
 const ensureChannel = () => {
-  if (channel) return channel;
-  channel = supabase.channel(CHANNEL, { config: { broadcast: { self: true } } });
-  channel.on("broadcast", { event: "bet" }, (payload: any) => {
-    const b = payload.payload as LiveBet;
+  if (bc || typeof BroadcastChannel === "undefined") return bc;
+  bc = new BroadcastChannel(CHANNEL);
+  bc.onmessage = (e) => {
+    const b = e.data as LiveBet;
     listeners.forEach(fn => fn(b));
-  }).subscribe();
-  return channel;
+  };
+  return bc;
 };
 
 export const broadcastBet = (b: LiveBet) => {
   const ch = ensureChannel();
-  ch.send({ type: "broadcast", event: "bet", payload: b });
+  ch?.postMessage(b);
+  listeners.forEach(fn => fn(b)); // local echo
 };
 
 export const subscribeBets = (fn: (b: LiveBet) => void) => {
