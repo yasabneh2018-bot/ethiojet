@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import {
   Wallet, Menu, Plane, TrendingUp, Award, ArrowDownToLine,
-  ArrowUpFromLine, History, LogOut,
+  ArrowUpFromLine, History, LogOut, ShieldCheck,
 } from "lucide-react";
 import { fmtBirr, coinsToBirr } from "@/lib/jetx";
 
@@ -22,7 +22,7 @@ const items = [
 ];
 
 export const AppLayout = () => {
-  const { user, loading, signOut } = useAuth();
+  const { user, isAdmin, loading, signOut } = useAuth();
   const { profile } = useProfile();
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -49,7 +49,7 @@ export const AppLayout = () => {
               <h1 className="text-lg font-black text-gradient-jet">JetX</h1>
             </div>
             <nav className="p-2 space-y-1">
-              {items.map(item => {
+              {[...items, ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: ShieldCheck }] : [])].map(item => {
                 const active = location.pathname === item.url;
                 return (
                   <NavLink
@@ -69,7 +69,7 @@ export const AppLayout = () => {
                 );
               })}
               <button
-                onClick={async () => { setOpen(false); await signOut(); nav("/auth"); }}
+                onClick={async () => { setOpen(false); signOut(); nav("/auth"); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent mt-2 border-t border-sidebar-border pt-3"
               >
                 <LogOut className="w-4 h-4" />

@@ -9,7 +9,7 @@ import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
 import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
 import { InlineChat } from "@/components/jetx/InlineChat";
 import { MessageCircle } from "lucide-react";
-import { addScore, insertBet, updateProfile } from "@/lib/localDb";
+import { addScore, insertBet } from "@/lib/localDb";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
 import { broadcastBet } from "@/lib/liveBets";
 import { toast } from "sonner";
@@ -109,7 +109,7 @@ const Index = () => {
     const newXp = xp + xpGain;
     setLocal({ balance: newBalance, total_wagered: newWagered, xp: newXp });
 
-    // Show green win banner + cashout sound
+    // Show green win banner
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
     broadcastBet({
       id: `${user.id}-cash-${Date.now()}`,
