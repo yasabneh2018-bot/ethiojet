@@ -1,57 +1,31 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, Send } from "lucide-react";
-import { toast } from "sonner";
-
-interface ChatMessage {
-  id: string;
-  user_id: string;
-  username: string;
-  message: string;
-  created_at: string;
-}
+import { getChat, sendChat, subscribeDb, type LocalChatMessage } from "@/lib/localDb";
 
 export const InlineChat = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<LocalChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let active = true;
-    (supabase as any)
-      .from("chat_messages")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(80)
-      .then(({ data }: any) => { if (active && data) setMessages([...data].reverse()); });
-
-    const ch = (supabase as any)
-      .channel(`chat-inline-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" },
-        (p: any) => setMessages(prev => [...prev, p.new as ChatMessage].slice(-200)))
-      .subscribe();
-    return () => { active = false; (supabase as any).removeChannel(ch); };
+    const load = () => setMessages(getChat().slice(-100));
+    load();
+    return subscribeDb(load);
   }, []);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
-  const send = async () => {
-    if (!input.trim() || !user || !profile || sending) return;
-    setSending(true);
-    const { error } = await (supabase as any).from("chat_messages").insert({
-      user_id: user.id, username: profile.username, message: input.trim().slice(0, 300),
-    });
-    setSending(false);
-    if (error) { toast.error("Could not send"); return; }
+  const send = () => {
+    if (!input.trim() || !user || !profile) return;
+    sendChat(user.id, profile.username, input.trim().slice(0, 300));
     setInput("");
   };
 
@@ -72,9 +46,7 @@ export const InlineChat = () => {
           const mine = m.user_id === user?.id;
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[85%] rounded-xl px-2.5 py-1 text-xs break-words ${
-                mine ? "bg-primary/30" : "bg-secondary"
-              }`}>
+              <div className={`max-w-[85%] rounded-xl px-2.5 py-1 text-xs break-words ${mine ? "bg-primary/30" : "bg-secondary"}`}>
                 {!mine && <div className="text-[9px] font-bold text-primary-glow uppercase">{m.username}</div>}
                 <div>{m.message}</div>
               </div>
@@ -84,7 +56,7 @@ export const InlineChat = () => {
       </div>
       <form onSubmit={e => { e.preventDefault(); send(); }} className="p-2 border-t border-border flex gap-1.5">
         <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Message…" maxLength={300} className="flex-1 h-8 text-xs" />
-        <Button type="submit" size="icon" className="h-8 w-8" disabled={!input.trim() || sending}>
+        <Button type="submit" size="icon" className="h-8 w-8" disabled={!input.trim()}>
           <Send className="w-3.5 h-3.5" />
         </Button>
       </form>
