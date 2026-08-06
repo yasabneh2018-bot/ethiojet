@@ -2,20 +2,27 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
-import { coinsToBirr, fmtBirr } from "@/lib/jetx";
-import { getTransactions, reviewTransaction, subscribeDb, type LocalTx } from "@/lib/localDb";
+import { ShieldCheck, Wallet } from "lucide-react";
+import { coinsToBirr, fmtBirr, birrToCoins } from "@/lib/jetx";
+import {
+  getTransactions, reviewTransaction, subscribeDb, adminAdjustBalance,
+  getProfiles, type LocalTx, type LocalProfile,
+} from "@/lib/localDb";
 
 type Filter = "pending" | "all";
 
 const Admin = () => {
   const { user, isAdmin, loading } = useAuth();
   const [txs, setTxs] = useState<LocalTx[]>([]);
+  const [profiles, setProfiles] = useState<LocalProfile[]>([]);
   const [filter, setFilter] = useState<Filter>("pending");
   const [zoom, setZoom] = useState<string | null>(null);
+  const [target, setTarget] = useState("");
+  const [amount, setAmount] = useState("");
 
-  const load = () => setTxs(getTransactions());
+  const load = () => { setTxs(getTransactions()); setProfiles(getProfiles()); };
   useEffect(() => { load(); return subscribeDb(load); }, []);
 
   if (loading) return null;
@@ -27,6 +34,18 @@ const Admin = () => {
     reviewTransaction(tx.id, status);
     toast.success(`${tx.type} ${status}`);
   };
+
+  const adjust = (sign: 1 | -1) => {
+    const birr = parseFloat(amount);
+    if (!Number.isFinite(birr) || birr <= 0) { toast.error("Enter a valid amount"); return; }
+    const res = adminAdjustBalance(target, sign * birrToCoins(birr));
+    if (res.error) { toast.error(res.error); return; }
+    toast.success(
+      `${sign > 0 ? "Added" : "Removed"} ${fmtBirr(birr)} · ${res.profile!.username} → ${fmtBirr(coinsToBirr(res.profile!.balance))}`
+    );
+    setAmount("");
+  };
+
 
   return (
     <div className="space-y-4 max-w-4xl">
@@ -52,6 +71,56 @@ const Admin = () => {
           ))}
         </div>
       </div>
+
+      {/* Add / remove balance by user id */}
+      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card space-y-3">
+        <div className="flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-primary-glow" />
+          <h3 className="font-bold">Adjust user balance</h3>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[2fr_1fr_auto_auto]">
+          <Input
+            list="jetx-users"
+            placeholder="User ID, phone or username"
+            value={target}
+            onChange={e => setTarget(e.target.value)}
+          />
+          <datalist id="jetx-users">
+            {profiles.map(p => (
+              <option key={p.id} value={p.id}>{`${p.username} · ${p.phone}`}</option>
+            ))}
+          </datalist>
+          <Input
+            type="number"
+            min="0"
+            step="1"
+            placeholder="Amount (Birr)"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+          />
+          <Button onClick={() => adjust(1)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
+            Add
+          </Button>
+          <Button onClick={() => adjust(-1)} variant="destructive" className="font-bold">
+            Remove
+          </Button>
+        </div>
+        <div className="max-h-40 overflow-auto text-xs divide-y divide-border/60">
+          {profiles.map(p => (
+            <button
+              key={p.id}
+              onClick={() => setTarget(p.id)}
+              className="w-full flex items-center gap-2 py-1.5 text-left hover:text-primary-glow"
+            >
+              <span className="font-bold">{p.username}</span>
+              <span className="text-muted-foreground tabular-nums">{p.phone}</span>
+              <span className="ml-auto font-bold tabular-nums">{fmtBirr(coinsToBirr(p.balance))}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+
 
       {rows.length === 0 ? (
         <div className="bg-gradient-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground shadow-card">
