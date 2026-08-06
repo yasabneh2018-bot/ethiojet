@@ -198,6 +198,28 @@ export const updateProfile = (userId: string, patch: Partial<LocalProfile>) => {
 export const topProfiles = (limit = 5) =>
   [...getProfiles()].sort((a, b) => b.total_wagered - a.total_wagered).slice(0, limit);
 
+/** Admin: credit (or debit with a negative amount) a user's balance in coins.
+ *  `key` may be the user id, phone number, or username. */
+export const adminAdjustBalance = (
+  key: string,
+  coins: number
+): { profile?: LocalProfile; error?: string } => {
+  const k = key.trim();
+  if (!k) return { error: "Enter a user id, phone or username" };
+  if (!Number.isFinite(coins) || coins === 0) return { error: "Enter a valid amount" };
+  const phone = normalizePhone(k);
+  const profiles = getProfiles();
+  const i = profiles.findIndex(
+    p => p.id === k || p.username.toLowerCase() === k.toLowerCase() || (phone && normalizePhone(p.phone) === phone)
+  );
+  if (i < 0) return { error: "User not found" };
+  const next = { ...profiles[i], balance: Math.max(0, profiles[i].balance + coins) };
+  profiles[i] = next;
+  write(K.profiles, profiles);
+  return { profile: next };
+};
+
+
 // --- bets ------------------------------------------------------------------
 export const getBets = () => read<LocalBet[]>(K.bets, []);
 
