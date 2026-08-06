@@ -72,6 +72,56 @@ const Admin = () => {
         </div>
       </div>
 
+      {/* Add / remove balance by user id */}
+      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card space-y-3">
+        <div className="flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-primary-glow" />
+          <h3 className="font-bold">Adjust user balance</h3>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[2fr_1fr_auto_auto]">
+          <Input
+            list="jetx-users"
+            placeholder="User ID, phone or username"
+            value={target}
+            onChange={e => setTarget(e.target.value)}
+          />
+          <datalist id="jetx-users">
+            {profiles.map(p => (
+              <option key={p.id} value={p.id}>{`${p.username} · ${p.phone}`}</option>
+            ))}
+          </datalist>
+          <Input
+            type="number"
+            min="0"
+            step="1"
+            placeholder="Amount (Birr)"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+          />
+          <Button onClick={() => adjust(1)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
+            Add
+          </Button>
+          <Button onClick={() => adjust(-1)} variant="destructive" className="font-bold">
+            Remove
+          </Button>
+        </div>
+        <div className="max-h-40 overflow-auto text-xs divide-y divide-border/60">
+          {profiles.map(p => (
+            <button
+              key={p.id}
+              onClick={() => setTarget(p.id)}
+              className="w-full flex items-center gap-2 py-1.5 text-left hover:text-primary-glow"
+            >
+              <span className="font-bold">{p.username}</span>
+              <span className="text-muted-foreground tabular-nums">{p.phone}</span>
+              <span className="ml-auto font-bold tabular-nums">{fmtBirr(coinsToBirr(p.balance))}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+
+
       {rows.length === 0 ? (
         <div className="bg-gradient-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground shadow-card">
           Nothing to review right now.
