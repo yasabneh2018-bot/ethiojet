@@ -2,20 +2,27 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
-import { coinsToBirr, fmtBirr } from "@/lib/jetx";
-import { getTransactions, reviewTransaction, subscribeDb, type LocalTx } from "@/lib/localDb";
+import { ShieldCheck, Wallet } from "lucide-react";
+import { coinsToBirr, fmtBirr, birrToCoins } from "@/lib/jetx";
+import {
+  getTransactions, reviewTransaction, subscribeDb, adminAdjustBalance,
+  getProfiles, type LocalTx, type LocalProfile,
+} from "@/lib/localDb";
 
 type Filter = "pending" | "all";
 
 const Admin = () => {
   const { user, isAdmin, loading } = useAuth();
   const [txs, setTxs] = useState<LocalTx[]>([]);
+  const [profiles, setProfiles] = useState<LocalProfile[]>([]);
   const [filter, setFilter] = useState<Filter>("pending");
   const [zoom, setZoom] = useState<string | null>(null);
+  const [target, setTarget] = useState("");
+  const [amount, setAmount] = useState("");
 
-  const load = () => setTxs(getTransactions());
+  const load = () => { setTxs(getTransactions()); setProfiles(getProfiles()); };
   useEffect(() => { load(); return subscribeDb(load); }, []);
 
   if (loading) return null;
@@ -27,6 +34,18 @@ const Admin = () => {
     reviewTransaction(tx.id, status);
     toast.success(`${tx.type} ${status}`);
   };
+
+  const adjust = (sign: 1 | -1) => {
+    const birr = parseFloat(amount);
+    if (!Number.isFinite(birr) || birr <= 0) { toast.error("Enter a valid amount"); return; }
+    const res = adminAdjustBalance(target, sign * birrToCoins(birr));
+    if (res.error) { toast.error(res.error); return; }
+    toast.success(
+      `${sign > 0 ? "Added" : "Removed"} ${fmtBirr(birr)} · ${res.profile!.username} → ${fmtBirr(coinsToBirr(res.profile!.balance))}`
+    );
+    setAmount("");
+  };
+
 
   return (
     <div className="space-y-4 max-w-4xl">
