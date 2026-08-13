@@ -79,6 +79,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
       phaseRef.current = "flying";
       setPhase("flying");
       onPhaseChange("flying", 1.0, cm);
+      playFly();
+
 
       const loop = () => {
         const m = multiplierAt(performance.now() - startRef.current);
