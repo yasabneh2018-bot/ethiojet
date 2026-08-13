@@ -33,7 +33,7 @@ export interface LocalBet {
   created_at: string;
 }
 
-export type PaymentMethod = "telebirr" | "cbe";
+export type PaymentMethod = string;
 export type TxStatus = "pending" | "approved" | "rejected";
 
 export interface LocalTx {
@@ -68,9 +68,18 @@ export interface LocalScore {
   updated_at: string;
 }
 
-export const PAYMENT_METHODS: { id: PaymentMethod; label: string; account: string; hint: string }[] = [
-  { id: "telebirr", label: "Telebirr", account: "0941815119", hint: "Send via Telebirr to this number, then upload the screenshot." },
-  { id: "cbe", label: "CBE (Commercial Bank of Ethiopia)", account: "1000123456789", hint: "Transfer to this CBE account, then upload the receipt." },
+export interface PaymentMethodDef {
+  id: PaymentMethod;
+  label: string;
+  account: string;
+  hint: string;
+  logo: string | null; // data URL
+  enabled: boolean;
+}
+
+const DEFAULT_METHODS: PaymentMethodDef[] = [
+  { id: "telebirr", label: "Telebirr", account: "0941815119", hint: "Send via Telebirr to this number, then upload the screenshot.", logo: null, enabled: true },
+  { id: "cbe", label: "CBE (Commercial Bank of Ethiopia)", account: "1000123456789", hint: "Transfer to this CBE account, then upload the receipt.", logo: null, enabled: true },
 ];
 
 const ADMIN_PHONE = "0941815119";
