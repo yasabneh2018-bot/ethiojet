@@ -38,7 +38,9 @@ const Withdraw = () => {
 
   if (!user || !profile) return null;
   const balanceBirr = coinsToBirr(profile.balance);
-  const active = PAYMENT_METHODS.find(m => m.id === method)!;
+  const methods = getActivePaymentMethods();
+  const active = methods.find(m => m.id === method) ?? methods[0];
+  if (!active) return null;
 
   const submit = () => {
     if (amount <= 0) return;
@@ -77,7 +79,7 @@ const Withdraw = () => {
         <div className="space-y-2">
           <Label>Payout method</Label>
           <div className="grid grid-cols-2 gap-2">
-            {PAYMENT_METHODS.map(m => (
+            {methods.map(m => (
               <button
                 key={m.id}
                 type="button"
@@ -86,7 +88,10 @@ const Withdraw = () => {
                   method === m.id ? "border-primary bg-primary/10 text-primary-glow" : "border-border bg-secondary/40"
                 }`}
               >
-                <div className="font-bold">{m.label}</div>
+                <div className="flex items-center gap-2">
+                  {m.logo && <img src={m.logo} alt={`${m.label} logo`} className="w-6 h-6 rounded object-contain" />}
+                  <div className="font-bold">{m.label}</div>
+                </div>
               </button>
             ))}
           </div>
