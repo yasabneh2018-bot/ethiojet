@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { multiplierAt, generateCrashMultiplier } from "@/lib/jetx";
+import { consumePlannedCrash } from "@/lib/localDb";
 import jetPlane from "@/assets/jet-plane-full.png";
 import flyAudio from "@/assets/fly.aac.asset.json";
 import crashAudio from "@/assets/crash.aac.asset.json";
@@ -71,7 +72,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
     };
 
     const begin = () => {
-      const cm = generateCrashMultiplier();
+      const cm = consumePlannedCrash() ?? generateCrashMultiplier();
       crashRef.current = cm;
       setCrashMult(cm);
       setMult(1.0);
@@ -178,7 +179,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   // Approx plane width in viewBox units (clamp(140px, 16vw, 230px) → ~14% of VW)
   const planeVW = VW * 0.14;
   const tipX = xEnd - planeVW * 0.18; // tuck into the body
-  const tipY = yEnd + 8;              // sit just under the fuselage
+  const tipY = yEnd + 2;              // sit right on the fuselage
   const cx = x0 + (tipX - x0) * 0.55;
   const cy = y0 - (y0 - tipY) * 0.15;
   const trailPath = `M ${x0} ${y0} Q ${cx} ${cy}, ${tipX} ${tipY}`;
@@ -354,7 +355,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
               opacity: isCrashed ? 0 : 1,
               transition: isCrashed
                 ? "left 0.45s cubic-bezier(0.5,0,0.9,0.4), top 0.45s ease-out, opacity 0.5s ease-out 0.2s"
-                : "top 0.08s linear, left 0.08s linear",
+                : "none",
             }}
           >
             <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
