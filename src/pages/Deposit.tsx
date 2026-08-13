@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ArrowDownToLine, History as HistoryIcon, Upload } from "lucide-react";
 import { birrToCoins, coinsToBirr, fmtBirr } from "@/lib/jetx";
 import {
-  PAYMENT_METHODS, createTransaction, getUserTransactions, subscribeDb,
+  getActivePaymentMethods, createTransaction, getUserTransactions, subscribeDb,
   type LocalTx, type PaymentMethod,
 } from "@/lib/localDb";
 
@@ -39,7 +39,9 @@ const Deposit = () => {
   useEffect(() => { load(); return subscribeDb(load); /* eslint-disable-next-line */ }, [user?.id]);
 
   if (!user || !profile) return null;
-  const active = PAYMENT_METHODS.find(m => m.id === method)!;
+  const methods = getActivePaymentMethods();
+  const active = methods.find(m => m.id === method) ?? methods[0];
+  if (!active) return null;
 
   const pickFile = (file?: File) => {
     if (!file) return;
@@ -56,7 +58,7 @@ const Deposit = () => {
     setBusy(true);
     createTransaction({
       user_id: user.id, username: profile.username, phone: user.phone,
-      type: "deposit", amount: birrToCoins(amount), method, account: account.trim(), proof,
+      type: "deposit", amount: birrToCoins(amount), method: active.id, account: account.trim(), proof,
     });
     setBusy(false);
     setProof(null);
@@ -84,7 +86,7 @@ const Deposit = () => {
         <div className="space-y-2">
           <Label>Payment method</Label>
           <div className="grid grid-cols-2 gap-2">
-            {PAYMENT_METHODS.map(m => (
+            {methods.map(m => (
               <button
                 key={m.id}
                 type="button"
@@ -93,7 +95,10 @@ const Deposit = () => {
                   method === m.id ? "border-primary bg-primary/10 text-primary-glow" : "border-border bg-secondary/40"
                 }`}
               >
-                <div className="font-bold">{m.label}</div>
+                <div className="flex items-center gap-2">
+                  {m.logo && <img src={m.logo} alt={`${m.label} logo`} className="w-6 h-6 rounded object-contain" />}
+                  <div className="font-bold">{m.label}</div>
+                </div>
                 <div className="text-[11px] text-muted-foreground tabular-nums">{m.account}</div>
               </button>
             ))}
