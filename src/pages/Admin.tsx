@@ -8,7 +8,7 @@ import { ShieldCheck, Wallet, CreditCard, Gauge, KeyRound, Plus, Trash2, Upload 
 import { coinsToBirr, fmtBirr, birrToCoins } from "@/lib/jetx";
 import {
   getTransactions, reviewTransaction, subscribeDb, adminAdjustBalance,
-  getProfiles, getPaymentMethods, upsertPaymentMethod, deletePaymentMethod,
+  getProfiles, getPaymentMethods, deletePaymentMethod,
   savePaymentMethods, getGameConfig, setServerSeed, rotateServerSeed, setPlannedCrashes,
   type LocalTx, type LocalProfile, type PaymentMethodDef,
 } from "@/lib/localDb";
