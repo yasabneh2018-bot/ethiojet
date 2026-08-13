@@ -23,9 +23,22 @@ const Admin = () => {
   const [zoom, setZoom] = useState<string | null>(null);
   const [target, setTarget] = useState("");
   const [amount, setAmount] = useState("");
+  const [methods, setMethods] = useState<PaymentMethodDef[]>([]);
+  const [seed, setSeed] = useState("");
+  const [crashes, setCrashes] = useState("");
 
-  const load = () => { setTxs(getTransactions()); setProfiles(getProfiles()); };
-  useEffect(() => { load(); return subscribeDb(load); }, []);
+  const load = () => {
+    setTxs(getTransactions());
+    setProfiles(getProfiles());
+    setMethods(getPaymentMethods());
+  };
+  useEffect(() => {
+    load();
+    const cfg = getGameConfig();
+    setSeed(cfg.serverSeed);
+    setCrashes(cfg.plannedCrashes.join(", "));
+    return subscribeDb(load);
+  }, []);
 
   if (loading) return null;
   if (!user || !isAdmin) return <Navigate to="/" replace />;
