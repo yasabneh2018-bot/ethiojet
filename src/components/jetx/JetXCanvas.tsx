@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { multiplierAt, generateCrashMultiplier } from "@/lib/jetx";
 import jetPlane from "@/assets/jet-plane-full.png";
+import flyAudio from "@/assets/fly.aac.asset.json";
+import crashAudio from "@/assets/crash.aac.asset.json";
 
 export type GamePhase = "waiting" | "flying" | "crashed";
 
@@ -23,6 +25,37 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const rafRef = useRef<number>();
   const waitStartRef = useRef(0);
   const waitRafRef = useRef<number>();
+  const flySndRef = useRef<HTMLAudioElement>();
+  const crashSndRef = useRef<HTMLAudioElement>();
+
+  useEffect(() => {
+    const fly = new Audio(flyAudio.url);
+    fly.loop = true;
+    fly.volume = 0.6;
+    const crash = new Audio(crashAudio.url);
+    crash.volume = 0.9;
+    flySndRef.current = fly;
+    crashSndRef.current = crash;
+    return () => { fly.pause(); crash.pause(); };
+  }, []);
+
+  const playFly = () => {
+    const a = flySndRef.current;
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  };
+  const stopFly = () => {
+    const a = flySndRef.current;
+    if (a) { a.pause(); a.currentTime = 0; }
+  };
+  const playCrash = () => {
+    const a = crashSndRef.current;
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  };
+
 
   useEffect(() => {
     const runWait = (afterMs: number, onDone: () => void) => {
@@ -46,6 +79,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
       phaseRef.current = "flying";
       setPhase("flying");
       onPhaseChange("flying", 1.0, cm);
+      playFly();
+
 
       const loop = () => {
         const m = multiplierAt(performance.now() - startRef.current);
@@ -53,6 +88,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           setMult(crashRef.current);
           phaseRef.current = "crashed";
           setPhase("crashed");
+          stopFly();
+          playCrash();
           onPhaseChange("crashed", crashRef.current, crashRef.current);
           onRoundEnd?.(crashRef.current);
           // Brief crash flash, then go straight to waiting + progress bar
@@ -80,6 +117,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (waitRafRef.current) cancelAnimationFrame(waitRafRef.current);
+      stopFly();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
