@@ -93,6 +93,8 @@ const K = {
   chat: "jetx:chat",
   scores: "jetx:scores",
   session: "jetx:session",
+  methods: "jetx:payment_methods",
+  game: "jetx:game_config",
 };
 
 const read = <T,>(key: string, fallback: T): T => {
