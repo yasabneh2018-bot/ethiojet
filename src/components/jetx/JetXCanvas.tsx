@@ -88,6 +88,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
           setMult(crashRef.current);
           phaseRef.current = "crashed";
           setPhase("crashed");
+          stopFly();
+          playCrash();
           onPhaseChange("crashed", crashRef.current, crashRef.current);
           onRoundEnd?.(crashRef.current);
           // Brief crash flash, then go straight to waiting + progress bar
