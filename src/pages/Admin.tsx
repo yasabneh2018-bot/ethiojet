@@ -4,11 +4,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ShieldCheck, Wallet } from "lucide-react";
+import { ShieldCheck, Wallet, CreditCard, Gauge, KeyRound, Plus, Trash2, Upload } from "lucide-react";
 import { coinsToBirr, fmtBirr, birrToCoins } from "@/lib/jetx";
 import {
   getTransactions, reviewTransaction, subscribeDb, adminAdjustBalance,
-  getProfiles, type LocalTx, type LocalProfile,
+  getProfiles, getPaymentMethods, upsertPaymentMethod, deletePaymentMethod,
+  savePaymentMethods, getGameConfig, setServerSeed, rotateServerSeed, setPlannedCrashes,
+  type LocalTx, type LocalProfile, type PaymentMethodDef,
 } from "@/lib/localDb";
 
 type Filter = "pending" | "all";
