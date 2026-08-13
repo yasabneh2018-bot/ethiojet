@@ -52,7 +52,7 @@ const Withdraw = () => {
     updateProfile(user.id, { balance: profile.balance - coins });
     createTransaction({
       user_id: user.id, username: profile.username, phone: user.phone,
-      type: "withdraw", amount: coins, method, account: account.trim(), proof: null,
+      type: "withdraw", amount: coins, method: active.id, account: account.trim(), proof: null,
     });
     setBusy(false);
     setAccount("");
