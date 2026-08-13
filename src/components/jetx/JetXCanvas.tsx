@@ -117,6 +117,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (waitRafRef.current) cancelAnimationFrame(waitRafRef.current);
+      stopFly();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
