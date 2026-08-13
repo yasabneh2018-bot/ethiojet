@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { multiplierAt, generateCrashMultiplier } from "@/lib/jetx";
 import jetPlane from "@/assets/jet-plane-full.png";
+import flyAudio from "@/assets/fly.aac.asset.json";
+import crashAudio from "@/assets/crash.aac.asset.json";
 
 export type GamePhase = "waiting" | "flying" | "crashed";
 
