@@ -25,6 +25,37 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   const rafRef = useRef<number>();
   const waitStartRef = useRef(0);
   const waitRafRef = useRef<number>();
+  const flySndRef = useRef<HTMLAudioElement>();
+  const crashSndRef = useRef<HTMLAudioElement>();
+
+  useEffect(() => {
+    const fly = new Audio(flyAudio.url);
+    fly.loop = true;
+    fly.volume = 0.6;
+    const crash = new Audio(crashAudio.url);
+    crash.volume = 0.9;
+    flySndRef.current = fly;
+    crashSndRef.current = crash;
+    return () => { fly.pause(); crash.pause(); };
+  }, []);
+
+  const playFly = () => {
+    const a = flySndRef.current;
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  };
+  const stopFly = () => {
+    const a = flySndRef.current;
+    if (a) { a.pause(); a.currentTime = 0; }
+  };
+  const playCrash = () => {
+    const a = crashSndRef.current;
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  };
+
 
   useEffect(() => {
     const runWait = (afterMs: number, onDone: () => void) => {
