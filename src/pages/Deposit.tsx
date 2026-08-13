@@ -58,7 +58,7 @@ const Deposit = () => {
     setBusy(true);
     createTransaction({
       user_id: user.id, username: profile.username, phone: user.phone,
-      type: "deposit", amount: birrToCoins(amount), method, account: account.trim(), proof,
+      type: "deposit", amount: birrToCoins(amount), method: active.id, account: account.trim(), proof,
     });
     setBusy(false);
     setProof(null);
