@@ -61,6 +61,48 @@ const Admin = () => {
     setAmount("");
   };
 
+  const patchMethod = (id: string, patch: Partial<PaymentMethodDef>) =>
+    setMethods(ms => ms.map(m => (m.id === id ? { ...m, ...patch } : m)));
+
+  const uploadLogo = (id: string, file?: File) => {
+    if (!file) return;
+    if (file.size > 500_000) { toast.error("Logo too large (max 500KB)"); return; }
+    const reader = new FileReader();
+    reader.onload = () => patchMethod(id, { logo: String(reader.result) });
+    reader.readAsDataURL(file);
+  };
+
+  const saveMethods = () => {
+    savePaymentMethods(methods.filter(m => m.label.trim()));
+    toast.success("Payment methods saved");
+  };
+
+  const addMethod = () => {
+    const id = `m_${Date.now().toString(36)}`;
+    setMethods(ms => [...ms, { id, label: "New method", account: "", hint: "", logo: null, enabled: true }]);
+  };
+
+  const removeMethod = (id: string) => {
+    deletePaymentMethod(id);
+    setMethods(ms => ms.filter(m => m.id !== id));
+    toast.success("Method removed");
+  };
+
+  const saveCrashes = () => {
+    const list = crashes
+      .split(/[,\s]+/)
+      .filter(Boolean)
+      .map(Number)
+      .filter(n => Number.isFinite(n) && n >= 1)
+      .slice(0, 10);
+    setPlannedCrashes(list);
+    setCrashes(list.join(", "));
+    toast.success(list.length ? `Next ${list.length} round(s) set` : "Planned crashes cleared");
+  };
+
+  const saveSeed = () => { setServerSeed(seed); toast.success("Server seed updated"); };
+  const newSeed = () => { const s = rotateServerSeed(); setSeed(s); toast.success("New server seed generated"); };
+
 
   return (
     <div className="space-y-4 max-w-4xl">
