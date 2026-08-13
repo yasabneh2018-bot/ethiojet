@@ -177,7 +177,76 @@ const Admin = () => {
         </div>
       </div>
 
+      {/* Payment methods */}
+      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card space-y-3">
+        <div className="flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-primary-glow" />
+          <h3 className="font-bold">Payment methods</h3>
+          <Button size="sm" variant="outline" className="ml-auto" onClick={addMethod}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add
+          </Button>
+        </div>
 
+        <div className="space-y-3">
+          {methods.map(m => (
+            <div key={m.id} className="rounded-xl border border-border p-3 space-y-2 bg-secondary/30">
+              <div className="flex items-center gap-3">
+                <label className="w-12 h-12 shrink-0 rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer overflow-hidden hover:bg-secondary/60">
+                  {m.logo ? (
+                    <img src={m.logo} alt={`${m.label} logo`} className="w-full h-full object-contain" />
+                  ) : (
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => uploadLogo(m.id, e.target.files?.[0])} />
+                </label>
+                <Input value={m.label} onChange={e => patchMethod(m.id, { label: e.target.value })} placeholder="Name" />
+                <Button size="icon" variant="ghost" onClick={() => removeMethod(m.id)} aria-label="Remove method">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input value={m.account} onChange={e => patchMethod(m.id, { account: e.target.value })} placeholder="Account / phone" />
+                <Input value={m.hint} onChange={e => patchMethod(m.id, { hint: e.target.value })} placeholder="Instructions shown to users" />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={m.enabled} onChange={e => patchMethod(m.id, { enabled: e.target.checked })} />
+                Enabled
+              </label>
+            </div>
+          ))}
+        </div>
+
+        <Button onClick={saveMethods} className="w-full bg-gradient-jet text-primary-foreground font-bold">
+          Save payment methods
+        </Button>
+      </div>
+
+      {/* Crash points + server seed */}
+      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card space-y-4">
+        <div className="flex items-center gap-2">
+          <Gauge className="w-4 h-4 text-primary-glow" />
+          <h3 className="font-bold">Next 10 rounds — crash points</h3>
+        </div>
+        <Input
+          value={crashes}
+          onChange={e => setCrashes(e.target.value)}
+          placeholder="e.g. 1.20, 2.50, 1.00, 8.40"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Up to 10 values, used in order. Rounds beyond the list are random again.
+        </p>
+        <Button onClick={saveCrashes} className="w-full font-bold">Save crash points</Button>
+
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
+          <KeyRound className="w-4 h-4 text-primary-glow" />
+          <h3 className="font-bold">Server seed</h3>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+          <Input value={seed} onChange={e => setSeed(e.target.value)} placeholder="Server seed" />
+          <Button onClick={saveSeed} className="font-bold">Save</Button>
+          <Button onClick={newSeed} variant="outline" className="font-bold">Generate</Button>
+        </div>
+      </div>
 
       {rows.length === 0 ? (
         <div className="bg-gradient-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground shadow-card">
