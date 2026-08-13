@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ArrowDownToLine, History as HistoryIcon, Upload } from "lucide-react";
 import { birrToCoins, coinsToBirr, fmtBirr } from "@/lib/jetx";
 import {
-  PAYMENT_METHODS, createTransaction, getUserTransactions, subscribeDb,
+  getActivePaymentMethods, createTransaction, getUserTransactions, subscribeDb,
   type LocalTx, type PaymentMethod,
 } from "@/lib/localDb";
 
