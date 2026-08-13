@@ -310,3 +310,59 @@ export const addScore = (user_id: string, username: string, tournament_key: stri
   else scores.push({ user_id, username, tournament_key, profit: delta, updated_at: new Date().toISOString() });
   write(K.scores, scores);
 };
+
+// --- payment methods (admin-managed) ---------------------------------------
+export const getPaymentMethods = (): PaymentMethodDef[] => {
+  const list = read<PaymentMethodDef[]>(K.methods, []);
+  return list.length ? list : DEFAULT_METHODS;
+};
+
+export const getActivePaymentMethods = () => getPaymentMethods().filter(m => m.enabled);
+
+export const savePaymentMethods = (list: PaymentMethodDef[]) => write(K.methods, list);
+
+export const upsertPaymentMethod = (m: PaymentMethodDef) => {
+  const list = getPaymentMethods();
+  const i = list.findIndex(x => x.id === m.id);
+  if (i >= 0) list[i] = m; else list.push(m);
+  write(K.methods, list);
+};
+
+export const deletePaymentMethod = (id: PaymentMethod) =>
+  write(K.methods, getPaymentMethods().filter(m => m.id !== id));
+
+// --- game config (server seed + planned crash points) ----------------------
+export interface GameConfig {
+  serverSeed: string;
+  plannedCrashes: number[]; // consumed in order, oldest first
+}
+
+const randomSeed = () =>
+  Array.from({ length: 4 }, () => Math.random().toString(36).slice(2, 10)).join("");
+
+export const getGameConfig = (): GameConfig =>
+  read<GameConfig>(K.game, { serverSeed: randomSeed(), plannedCrashes: [] });
+
+export const setServerSeed = (seed: string) =>
+  write(K.game, { ...getGameConfig(), serverSeed: seed.trim() || randomSeed() });
+
+export const rotateServerSeed = () => {
+  const seed = randomSeed();
+  write(K.game, { ...getGameConfig(), serverSeed: seed });
+  return seed;
+};
+
+export const setPlannedCrashes = (list: number[]) =>
+  write(K.game, {
+    ...getGameConfig(),
+    plannedCrashes: list.filter(n => Number.isFinite(n) && n >= 1).slice(0, 10),
+  });
+
+/** Takes the next planned crash point (if any) and removes it from the queue. */
+export const consumePlannedCrash = (): number | null => {
+  const cfg = getGameConfig();
+  if (!cfg.plannedCrashes.length) return null;
+  const [next, ...rest] = cfg.plannedCrashes;
+  write(K.game, { ...cfg, plannedCrashes: rest });
+  return next;
+};
