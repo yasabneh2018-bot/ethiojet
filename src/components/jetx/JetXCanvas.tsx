@@ -293,18 +293,18 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         >
           <defs>
             <linearGradient id="trailFill" x1="0" y1="100%" x2="0" y2="0%">
-              <stop offset="0%" stopColor="hsl(0 90% 55%)" stopOpacity="0.05" />
-              <stop offset="100%" stopColor="hsl(0 90% 55%)" stopOpacity="0.45" />
+              <stop offset="0%" stopColor="hsl(352 100% 48%)" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="hsl(352 100% 50%)" stopOpacity="0.75" />
             </linearGradient>
           </defs>
           <path d={fillPath} fill="url(#trailFill)" />
           <path
             d={trailPath}
-            stroke="hsl(0 95% 60%)"
-            strokeWidth="3"
+            stroke="hsl(350 100% 52%)"
+            strokeWidth="7"
             fill="none"
             strokeLinecap="round"
-            style={{ filter: "drop-shadow(0 0 6px hsl(0 95% 55%))" }}
+            style={{ filter: "drop-shadow(0 0 10px hsl(350 100% 50%))" }}
           />
         </svg>
       )}

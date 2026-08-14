@@ -3,7 +3,6 @@ import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { JetXCanvas, type GamePhase } from "@/components/jetx/JetXCanvas";
 import { BetControls } from "@/components/jetx/BetControls";
-import { TournamentBanner } from "@/components/jetx/TournamentBanner";
 import { HistoryStrip } from "@/components/jetx/HistoryStrip";
 import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
 import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
@@ -190,7 +189,6 @@ const Index = () => {
 
   return (
     <div className="space-y-3">
-      <TournamentBanner />
       <HistoryStrip history={history} />
 
       {/* 3-column layout: live bets | game | chat (chat collapsible) */}
