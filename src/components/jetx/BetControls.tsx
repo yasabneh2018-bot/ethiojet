@@ -65,22 +65,22 @@ export const BetControls = ({
   const canCancel = phase === "waiting" && hasActiveBet && !cashedOut;
 
   return (
-    <div className="bg-card/80 border border-border rounded-xl p-1.5 flex flex-col gap-1.5 max-w-[280px] w-full mr-auto overflow-hidden">
-      <div className="flex items-center gap-1.5 min-w-0">
+    <div className="bg-[hsl(0_0%_11%)] border border-white/10 rounded-2xl p-2 flex flex-col gap-2 max-w-[280px] w-full mr-auto overflow-hidden">
+      <div className="flex items-center gap-2 min-w-0">
         {/* Stepper */}
-        <div className="flex items-center gap-0.5 bg-background/50 rounded-lg p-0.5 shrink-0">
-          <Button size="icon" variant="ghost" onClick={() => adjust(-1)} className="h-8 w-7">
+        <div className="flex items-center gap-0.5 bg-[hsl(0_0%_16%)] rounded-full p-0.5 shrink-0 border border-white/10">
+          <Button size="icon" variant="ghost" onClick={() => adjust(-1)} className="h-7 w-7 rounded-full text-white/70 hover:text-white hover:bg-white/10">
             <Minus className="w-3.5 h-3.5" />
           </Button>
           <Input
             type="number"
             value={amount}
             onChange={e => setAmount(Math.max(0, +e.target.value))}
-            className="text-center text-sm font-bold tabular-nums bg-transparent border-0 h-8 w-12 px-0 focus-visible:ring-0"
+            className="text-center text-sm font-bold tabular-nums bg-transparent border-0 h-7 w-12 px-0 text-white focus-visible:ring-0"
             min={MIN_BET_BIRR}
             step={1}
           />
-          <Button size="icon" variant="ghost" onClick={() => adjust(1)} className="h-8 w-7">
+          <Button size="icon" variant="ghost" onClick={() => adjust(1)} className="h-7 w-7 rounded-full text-white/70 hover:text-white hover:bg-white/10">
             <Plus className="w-3.5 h-3.5" />
           </Button>
         </div>
@@ -89,11 +89,12 @@ export const BetControls = ({
         {canCashout ? (
           <Button
             onClick={onCashout}
-            className="flex-1 min-w-0 h-9 text-xs font-black rounded-lg flex items-center justify-center gap-1 leading-none border-0 px-2"
+            className="flex-1 min-w-0 h-9 text-xs font-black rounded-xl flex items-center justify-center gap-1 leading-none border px-2"
             style={{
-              background: "linear-gradient(180deg, hsl(45 100% 55%), hsl(38 95% 45%))",
-              color: "hsl(30 60% 15%)",
-              boxShadow: "0 0 18px hsl(45 100% 50% / 0.55)",
+              background: "linear-gradient(180deg, hsl(45 100% 58%), hsl(38 96% 47%))",
+              borderColor: "hsl(45 100% 72%)",
+              color: "hsl(30 70% 12%)",
+              boxShadow: "0 0 16px hsl(45 100% 50% / 0.45)",
             }}
           >
             <span>CASH OUT</span>
@@ -102,19 +103,25 @@ export const BetControls = ({
         ) : canCancel ? (
           <Button
             onClick={onCancelBet}
-            className="flex-1 min-w-0 h-9 text-xs font-black rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 px-2"
+            className="flex-1 min-w-0 h-9 text-xs font-black rounded-xl border px-2 text-white"
+            style={{
+              background: "linear-gradient(180deg, hsl(0 78% 52%), hsl(0 76% 40%))",
+              borderColor: "hsl(0 85% 65%)",
+              boxShadow: "0 0 14px hsl(0 80% 50% / 0.4)",
+            }}
           >
             CANCEL
           </Button>
         ) : (
           <Button
             onClick={tryPlace}
-            className="flex-1 min-w-0 h-9 text-xs font-black rounded-lg flex items-center justify-center gap-1 leading-none border-0 px-2 disabled:opacity-50"
+            className="flex-1 min-w-0 h-9 text-xs font-black rounded-xl flex items-center justify-center gap-1 leading-none border px-2 text-white disabled:opacity-50"
             style={{
               background: canPlace
-                ? "linear-gradient(180deg, hsl(142 76% 50%), hsl(142 76% 38%))"
-                : "linear-gradient(180deg, hsl(142 30% 30%), hsl(142 30% 22%))",
-              color: "white",
+                ? "linear-gradient(180deg, hsl(122 72% 42%), hsl(122 75% 30%))"
+                : "linear-gradient(180deg, hsl(122 20% 26%), hsl(122 20% 19%))",
+              borderColor: canPlace ? "hsl(122 70% 58%)" : "hsl(122 12% 32%)",
+              boxShadow: canPlace ? "0 0 14px hsl(122 75% 40% / 0.45)" : "none",
             }}
           >
             <span>{phase === "flying" && !hasActiveBet ? "QUEUE" : label.toUpperCase()}</span>
@@ -126,6 +133,7 @@ export const BetControls = ({
           </Button>
         )}
       </div>
+
 
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
