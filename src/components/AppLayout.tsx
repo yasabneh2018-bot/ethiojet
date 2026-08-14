@@ -6,8 +6,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import {
   Wallet, Menu, Plane, TrendingUp, Award, ArrowDownToLine,
-  ArrowUpFromLine, History, LogOut, ShieldCheck,
+  ArrowUpFromLine, History, LogOut, ShieldCheck, Volume2, Music, Fan,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { fmtBirr, coinsToBirr } from "@/lib/jetx";
 
 const items = [
@@ -21,10 +22,18 @@ const items = [
   { title: "History", url: "/history", icon: History },
 ];
 
+type ToggleKey = "sound" | "music" | "animation";
+const toggles: { key: ToggleKey; title: string; icon: typeof Volume2 }[] = [
+  { key: "sound", title: "Sound", icon: Volume2 },
+  { key: "music", title: "Music", icon: Music },
+  { key: "animation", title: "Animation", icon: Fan },
+];
+
 export const AppLayout = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const { profile } = useProfile();
   const [open, setOpen] = useState(false);
+  const [settings, setSettings] = useState<Record<ToggleKey, boolean>>({ sound: true, music: false, animation: true });
   const location = useLocation();
   const nav = useNavigate();
 
@@ -41,14 +50,29 @@ export const AppLayout = () => {
               <Menu className="w-5 h-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 bg-sidebar border-sidebar-border p-0">
-            <div className="p-4 flex items-center gap-2 border-b border-sidebar-border">
-              <div className="w-9 h-9 rounded-xl bg-gradient-jet flex items-center justify-center shadow-glow">
-                <Plane className="w-5 h-5 text-primary-foreground" fill="currentColor" />
+          <SheetContent side="right" className="w-[85vw] max-w-sm bg-[hsl(0_0%_10%)] border-white/10 p-0 overflow-y-auto">
+            <div className="p-4 flex items-center gap-3 bg-white/5">
+              <div className="w-12 h-12 rounded-full bg-gradient-jet flex items-center justify-center shrink-0">
+                <Plane className="w-6 h-6 text-primary-foreground" fill="currentColor" />
               </div>
-              <h1 className="text-lg font-black text-gradient-jet">JetX</h1>
+              <span className="text-lg font-bold tabular-nums truncate">{profile.username}</span>
             </div>
-            <nav className="p-2 space-y-1">
+
+            <div className="divide-y divide-white/10 border-y border-white/10">
+              {toggles.map(t => (
+                <label key={t.key} className="flex items-center gap-3 px-4 py-3.5 cursor-pointer">
+                  <t.icon className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-base">{t.title}</span>
+                  <Switch
+                    className="ml-auto"
+                    checked={settings[t.key]}
+                    onCheckedChange={v => setSettings(s => ({ ...s, [t.key]: v }))}
+                  />
+                </label>
+              ))}
+            </div>
+
+            <nav className="divide-y divide-white/10">
               {[...items, ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: ShieldCheck }] : [])].map(item => {
                 const active = location.pathname === item.url;
                 return (
@@ -57,22 +81,20 @@ export const AppLayout = () => {
                     to={item.url}
                     end
                     onClick={() => setOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      active
-                        ? "bg-primary/20 text-primary-glow"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent"
+                    className={`flex items-center gap-3 px-4 py-3.5 text-base ${
+                      active ? "text-primary-glow bg-white/5" : "text-sidebar-foreground"
                     }`}
                   >
-                    <item.icon className="w-4 h-4" />
+                    <item.icon className="w-5 h-5 text-muted-foreground" />
                     <span>{item.title}</span>
                   </NavLink>
                 );
               })}
               <button
                 onClick={async () => { setOpen(false); signOut(); nav("/auth"); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent mt-2 border-t border-sidebar-border pt-3"
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-base text-sidebar-foreground"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-5 h-5 text-muted-foreground" />
                 <span>Sign out</span>
               </button>
             </nav>
