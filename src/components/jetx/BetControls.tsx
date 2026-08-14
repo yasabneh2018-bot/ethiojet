@@ -135,7 +135,7 @@ export const BetControls = ({
       </div>
 
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/10">
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Auto Bet
           <Switch checked={autoPlay} onCheckedChange={setAutoPlay} />
