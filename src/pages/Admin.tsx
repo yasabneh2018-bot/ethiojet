@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { ShieldCheck, Wallet, CreditCard, Gauge, KeyRound, Plus, Trash2, Upload } from "lucide-react";
 import { coinsToBirr, fmtBirr, birrToCoins } from "@/lib/jetx";
@@ -129,12 +130,14 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* Add / remove balance by user id */}
-      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card space-y-3">
-        <div className="flex items-center gap-2">
-          <Wallet className="w-4 h-4 text-primary-glow" />
-          <h3 className="font-bold">Adjust user balance</h3>
-        </div>
+      <Accordion type="single" collapsible className="space-y-3">
+      <AccordionItem value="balance" className="bg-gradient-card border border-border rounded-2xl shadow-card px-4">
+        <AccordionTrigger className="hover:no-underline">
+          <span className="flex items-center gap-2 font-bold">
+            <Wallet className="w-4 h-4 text-primary-glow" /> Adjust user balance
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-3">
         <div className="grid gap-2 sm:grid-cols-[2fr_1fr_auto_auto]">
           <Input
             list="jetx-users"
@@ -175,17 +178,19 @@ const Admin = () => {
             </button>
           ))}
         </div>
-      </div>
+        </AccordionContent>
+      </AccordionItem>
 
-      {/* Payment methods */}
-      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card space-y-3">
-        <div className="flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-primary-glow" />
-          <h3 className="font-bold">Payment methods</h3>
-          <Button size="sm" variant="outline" className="ml-auto" onClick={addMethod}>
-            <Plus className="w-3.5 h-3.5 mr-1" /> Add
-          </Button>
-        </div>
+      <AccordionItem value="methods" className="bg-gradient-card border border-border rounded-2xl shadow-card px-4">
+        <AccordionTrigger className="hover:no-underline">
+          <span className="flex items-center gap-2 font-bold">
+            <CreditCard className="w-4 h-4 text-primary-glow" /> Payment methods
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-3">
+        <Button size="sm" variant="outline" onClick={addMethod}>
+          <Plus className="w-3.5 h-3.5 mr-1" /> Add
+        </Button>
 
         <div className="space-y-3">
           {methods.map(m => (
@@ -219,14 +224,16 @@ const Admin = () => {
         <Button onClick={saveMethods} className="w-full bg-gradient-jet text-primary-foreground font-bold">
           Save payment methods
         </Button>
-      </div>
+        </AccordionContent>
+      </AccordionItem>
 
-      {/* Crash points + server seed */}
-      <div className="bg-gradient-card border border-border rounded-2xl p-4 shadow-card space-y-4">
-        <div className="flex items-center gap-2">
-          <Gauge className="w-4 h-4 text-primary-glow" />
-          <h3 className="font-bold">Next 10 rounds — crash points</h3>
-        </div>
+      <AccordionItem value="crash" className="bg-gradient-card border border-border rounded-2xl shadow-card px-4">
+        <AccordionTrigger className="hover:no-underline">
+          <span className="flex items-center gap-2 font-bold">
+            <Gauge className="w-4 h-4 text-primary-glow" /> Crash points & server seed
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-4">
         <Input
           value={crashes}
           onChange={e => setCrashes(e.target.value)}
@@ -246,8 +253,21 @@ const Admin = () => {
           <Button onClick={saveSeed} className="font-bold">Save</Button>
           <Button onClick={newSeed} variant="outline" className="font-bold">Generate</Button>
         </div>
-      </div>
+        </AccordionContent>
+      </AccordionItem>
 
+      <AccordionItem value="txs" className="bg-gradient-card border border-border rounded-2xl shadow-card px-4">
+        <AccordionTrigger className="hover:no-underline">
+          <span className="flex items-center gap-2 font-bold">
+            <ShieldCheck className="w-4 h-4 text-primary-glow" /> Deposits & withdrawals
+            {txs.filter(t => t.status === "pending").length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/20 text-primary-glow text-[10px]">
+                {txs.filter(t => t.status === "pending").length}
+              </span>
+            )}
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-3">
       {rows.length === 0 ? (
         <div className="bg-gradient-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground shadow-card">
           Nothing to review right now.
@@ -294,6 +314,9 @@ const Admin = () => {
           ))}
         </div>
       )}
+        </AccordionContent>
+      </AccordionItem>
+      </Accordion>
 
       {zoom && (
         <div
