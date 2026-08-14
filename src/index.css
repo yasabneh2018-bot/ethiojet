@@ -177,4 +177,17 @@
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
+
+  @keyframes ray-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .bg-rays {
+    background-image: repeating-conic-gradient(
+      from 0deg,
+      rgba(255,255,255,0.055) 0deg 4deg,
+      rgba(255,255,255,0) 4deg 11deg
+    );
+    animation: ray-spin 90s linear infinite;
+  }
 }
