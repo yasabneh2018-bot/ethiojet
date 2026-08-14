@@ -191,13 +191,36 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
   return (
     <div
       className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] overflow-hidden shadow-card"
-      style={{ background: "hsl(0 0% 0%)" }}
+      style={{ background: "radial-gradient(circle at 12% 88%, hsl(272 70% 22%) 0%, hsl(266 60% 10%) 32%, hsl(0 0% 3%) 68%, hsl(0 0% 0%) 100%)" }}
     >
+      {/* Rotating light-ray strips anchored at the launch corner */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute bg-rays"
+          style={{
+            left: "3%",
+            bottom: "5%",
+            width: "220%",
+            aspectRatio: "1 / 1",
+            transformOrigin: "center",
+            translate: "-50% 50%",
+            opacity: 0.55,
+          }}
+        />
+      </div>
 
+      {/* Purple core glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 30% 70%, hsl(285 90% 55% / 0.28), transparent 55%)",
+        }}
+      />
 
       {/* Subtle grid overlay */}
       <div
-        className="absolute inset-0 opacity-20 pointer-events-none"
+        className="absolute inset-0 opacity-[0.12] pointer-events-none"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)",
@@ -205,7 +228,8 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
         }}
       />
       {/* Drifting particles (wind motion) */}
-      <div className="absolute inset-0 bg-particles pointer-events-none opacity-40" />
+      <div className="absolute inset-0 bg-particles pointer-events-none opacity-30" />
+
 
       {/* Center light beam removed per request */}
 
