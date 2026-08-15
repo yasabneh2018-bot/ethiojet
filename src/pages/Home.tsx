@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { topProfiles, subscribeDb } from "@/lib/localDb";
 import { coinsToBirr, fmtBirr } from "@/lib/jetx";
-import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, ArrowUpFromLine, Wallet, Trophy, Play, Crown, Timer } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  ArrowDownToLine, ArrowUpFromLine, Trophy, Search, SlidersHorizontal,
+  Home as HomeIcon, Volleyball, Gamepad2, Flame, Timer,
+} from "lucide-react";
 import aviatorLogo from "@/assets/aviator-logo.png";
 
 interface TopGamer {
@@ -12,10 +15,17 @@ interface TopGamer {
   total_wagered: number;
 }
 
+const GAME_TABS = ["ALL GAMES", "MY GAMES"] as const;
+const PERIODS = ["MONTHLY", "DAILY", "MY"] as const;
+const CATEGORIES = ["All", "Most Popular", "Favourites", "Keno", "Card Games", "Crash"];
+
 const Home = () => {
   const { profile } = useProfile();
   const [top, setTop] = useState<TopGamer[]>([]);
   const [countdown, setCountdown] = useState(5);
+  const [tab, setTab] = useState<(typeof GAME_TABS)[number]>("ALL GAMES");
+  const [period, setPeriod] = useState<(typeof PERIODS)[number]>("MONTHLY");
+  const [cat, setCat] = useState("All");
 
   useEffect(() => {
     const i = setInterval(() => setCountdown(c => (c <= 1 ? 5 : c - 1)), 1000);
@@ -32,94 +42,132 @@ const Home = () => {
   const balanceBirr = coinsToBirr(profile.balance);
 
   return (
-    <div className="space-y-5 max-w-3xl mx-auto">
-      {/* Hero with logo + play */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950/60 via-background to-background border border-border p-6 text-center shadow-card">
-        <img
-          src={aviatorLogo}
-          alt="Aviator"
-          className="w-40 h-40 mx-auto object-contain drop-shadow-[0_0_30px_rgba(239,68,68,0.5)]"
-        />
-        <h1 className="text-3xl font-black mt-2 tracking-tight">Welcome, {profile.username}</h1>
-        <p className="text-sm text-muted-foreground mt-1">Ready to fly? Cash out before it crashes.</p>
-        <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/60 border border-border">
-          <Timer className="w-4 h-4 text-primary-glow" />
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">Next round in</span>
-          <span className="text-lg font-black tabular-nums text-primary-glow">{countdown}s</span>
-        </div>
-        <Button
-          asChild
-          size="lg"
-          className="mt-5 h-14 px-10 text-lg font-black rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.5)]"
-        >
-          <Link to="/play">
-            <Play className="w-5 h-5 mr-2" fill="currentColor" />
-            PLAY AVIATOR
-          </Link>
-        </Button>
+    <div className="-mx-2 sm:-mx-4 -my-3 pb-20 bg-[hsl(220_30%_10%)] min-h-screen">
+      {/* Cashback strip */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+        <span className="w-10 h-10 rounded-full bg-[hsl(220_25%_16%)] flex items-center justify-center">
+          <Flame className="w-5 h-5 text-[hsl(140_60%_50%)]" />
+        </span>
+        <span className="text-white text-base">5% daily cashback</span>
+        <span className="ml-auto flex items-center gap-1 text-xs text-white/60">
+          <Timer className="w-3.5 h-3.5" /> next round {countdown}s
+        </span>
       </div>
 
-      {/* Wallet card */}
-      <div className="bg-gradient-card border border-border rounded-2xl p-5 shadow-card">
-        <div className="flex items-center gap-2 mb-3">
-          <Wallet className="w-5 h-5 text-primary-glow" />
-          <h2 className="font-bold text-lg">Your Wallet</h2>
+      {/* Game tabs */}
+      <div className="grid grid-cols-2">
+        {GAME_TABS.map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`py-4 text-base font-semibold tracking-wide border-b-2 ${
+              tab === t
+                ? "text-[hsl(140_60%_50%)] border-[hsl(140_60%_50%)] bg-[hsl(220_28%_13%)]"
+                : "text-white border-transparent"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Hero banner */}
+      <Link to="/play" className="block relative h-56 overflow-hidden bg-gradient-to-br from-[hsl(0_70%_18%)] via-[hsl(0_60%_10%)] to-black">
+        <img src={aviatorLogo} alt="Aviator crash game" className="absolute inset-0 m-auto h-40 object-contain drop-shadow-[0_0_40px_rgba(239,68,68,0.6)]" />
+        <span className="absolute bottom-2 right-3 text-xs text-white/70 tabular-nums">00:0{countdown}</span>
+      </Link>
+
+      {/* Wallet */}
+      <div className="px-4 py-4 grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-[hsl(220_25%_16%)] p-3">
+          <div className="text-[10px] uppercase tracking-widest text-white/50">Balance</div>
+          <div className="text-xl font-black tabular-nums text-[hsl(140_60%_50%)]">{fmtBirr(balanceBirr)}</div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-secondary/60 rounded-xl p-3">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Balance</div>
-            <div className="text-2xl font-black text-gradient-jet tabular-nums">{fmtBirr(balanceBirr)}</div>
-          </div>
-          <div className="bg-secondary/60 rounded-xl p-3">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Withdrawable</div>
-            <div className="text-2xl font-black tabular-nums">{fmtBirr(balanceBirr)}</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 mt-3">
-          <Button asChild className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
-            <Link to="/deposit"><ArrowDownToLine className="w-4 h-4 mr-1" /> Deposit</Link>
-          </Button>
-          <Button asChild variant="secondary" className="font-bold">
-            <Link to="/withdraw"><ArrowUpFromLine className="w-4 h-4 mr-1" /> Withdraw</Link>
-          </Button>
+        <div className="rounded-xl bg-[hsl(220_25%_16%)] p-3">
+          <div className="text-[10px] uppercase tracking-widest text-white/50">Withdrawable</div>
+          <div className="text-xl font-black tabular-nums text-white">{fmtBirr(balanceBirr)}</div>
         </div>
       </div>
 
-      {/* Top gamers */}
-      <div className="bg-gradient-card border border-border rounded-2xl p-5 shadow-card">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-5 h-5 text-yellow-400" />
-          <h2 className="font-bold text-lg">Top Gamers</h2>
-          <span className="ml-auto text-xs text-muted-foreground">by total wagered</span>
+      {/* Period tabs */}
+      <div className="grid grid-cols-3">
+        {PERIODS.map(p => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={`py-3 text-sm font-semibold ${
+              period === p ? "text-[hsl(140_60%_50%)] bg-[hsl(220_28%_13%)] rounded-t-xl" : "text-white"
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+
+      {/* Top winners */}
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-2 text-white/60 text-sm mb-2">
+          <Trophy className="w-4 h-4 text-yellow-400" /> Top Winners
         </div>
         {top.length === 0 ? (
-          <div className="text-sm text-muted-foreground text-center py-4">No rankings yet — be the first!</div>
+          <div className="text-sm text-white/50 py-3">No rankings yet — be the first!</div>
         ) : (
-          <ul className="space-y-2">
-            {top.map((g, i) => {
-              const reward = i === 0 ? "500 Birr" : i === 1 ? "250 Birr" : i === 2 ? "100 Birr" : "—";
-              const medal = i === 0 ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/40"
-                : i === 1 ? "bg-slate-400/20 text-slate-300 border-slate-400/40"
-                : i === 2 ? "bg-amber-700/20 text-amber-500 border-amber-700/40"
-                : "bg-secondary/60 text-muted-foreground border-border";
-              return (
-                <li key={i} className="flex items-center gap-3 p-2 rounded-xl bg-secondary/40">
-                  <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-black text-sm ${medal}`}>
-                    {i === 0 ? <Crown className="w-4 h-4" /> : i + 1}
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            {top.map((g, i) => (
+              <div key={i} className="shrink-0 w-64 flex items-center gap-3 rounded-xl bg-[hsl(220_25%_16%)] p-3">
+                <img src={aviatorLogo} alt="" className="w-16 h-16 rounded-lg object-contain bg-black/40 p-1" />
+                <div className="min-w-0">
+                  <div className="text-white text-sm truncate">{g.username}</div>
+                  <div className="text-[hsl(140_60%_50%)] font-black tabular-nums">
+                    {fmtBirr(coinsToBirr(Number(g.total_wagered)))}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold truncate">{g.username}</div>
-                    <div className="text-xs text-muted-foreground tabular-nums">
-                      {fmtBirr(coinsToBirr(Number(g.total_wagered)))} wagered
-                    </div>
-                  </div>
-                  <div className="text-xs font-bold text-yellow-400">{reward}</div>
-                </li>
-              );
-            })}
-          </ul>
+                  <div className="text-xs text-white/45">wagered</div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
+
+      {/* Categories */}
+      <div className="flex gap-5 px-4 py-2 overflow-x-auto no-scrollbar border-t border-white/5">
+        {CATEGORIES.map(c => (
+          <button
+            key={c}
+            onClick={() => setCat(c)}
+            className={`shrink-0 text-base font-semibold ${cat === c ? "text-[hsl(140_60%_50%)]" : "text-white"}`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex-1 flex items-center gap-2 h-12 rounded-lg bg-[hsl(220_25%_16%)] px-3">
+          <Search className="w-5 h-5 text-white/60" />
+          <Input placeholder="Search" className="border-0 bg-transparent text-white h-10 focus-visible:ring-0" />
+        </div>
+        <button className="w-12 h-12 rounded-full bg-[hsl(220_25%_16%)] flex items-center justify-center text-white" aria-label="Filters">
+          <SlidersHorizontal className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Bottom nav */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 grid grid-cols-5 bg-[hsl(220_28%_13%)] border-t border-white/10">
+        {[
+          { to: "/", label: "Home", icon: HomeIcon },
+          { to: "/wagering", label: "Sports", icon: Volleyball },
+          { to: "/deposit", label: "Deposit", icon: ArrowDownToLine },
+          { to: "/play", label: "GAMES", icon: Gamepad2, active: true },
+          { to: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
+        ].map(i => (
+          <Link key={i.label} to={i.to} className={`py-2 flex flex-col items-center gap-1 text-[11px] ${i.active ? "text-[hsl(140_60%_50%)]" : "text-white"}`}>
+            <i.icon className="w-6 h-6" />
+            {i.label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 };
