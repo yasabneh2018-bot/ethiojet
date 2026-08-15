@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus } from "lucide-react";
@@ -22,11 +21,14 @@ interface Props {
   reservedByOther?: number;
 }
 
+const QUICK = [16, 40, 80, 400];
+
 export const BetControls = ({
-  label, balanceBirr, phase, currentMult, onPlaceBet, onCashout, onCancelBet,
+  balanceBirr, phase, currentMult, onPlaceBet, onCashout, onCancelBet,
   hasActiveBet, cashedOut, autoPlay, setAutoPlay, reservedByOther = 0,
 }: Props) => {
-  const [amount, setAmount] = useState(10);
+  const [amount, setAmount] = useState(5);
+  const [mode, setMode] = useState<"bet" | "auto">("bet");
   const [autoCashout, setAutoCashout] = useState(1.10);
   const [autoCashoutOn, setAutoCashoutOn] = useState(false);
   const [pendingBet, setPendingBet] = useState(false);
@@ -44,14 +46,13 @@ export const BetControls = ({
   }, [autoPlay, phase, hasActiveBet, pendingBet, amount, available, autoCashout, autoCashoutOn, onPlaceBet]);
 
   const adjust = (delta: number) =>
-    setAmount(a => Math.max(MIN_BET_BIRR, Math.min(available, +(a + delta).toFixed(2))));
+    setAmount(a => Math.max(MIN_BET_BIRR, +(a + delta).toFixed(2)));
 
   const tryPlace = () => {
     if (amount < MIN_BET_BIRR) { toast.error(`Minimum bet is ${MIN_BET_BIRR} Birr`); return; }
     if (betExceedsCap(amount)) { toast.error(`Bet too large — max possible win is ${MAX_WIN_BIRR.toLocaleString()} Birr`); return; }
     if (amount > available) { toast.error("Insufficient balance"); return; }
     if (phase !== "waiting") {
-      // Queue for the next round via auto-bet
       setAutoPlay(true);
       toast.success(`Bet queued for next round · ${fmtBirr(amount)}`);
       return;
@@ -59,102 +60,124 @@ export const BetControls = ({
     onPlaceBet(amount, autoCashoutOn ? autoCashout : null);
   };
 
-  const canPlace = !hasActiveBet && amount >= MIN_BET_BIRR && amount <= available && !betExceedsCap(amount);
   const canCashout = phase === "flying" && hasActiveBet && !cashedOut;
-  // Bet placed but round not yet flying → allow Cancel
   const canCancel = phase === "waiting" && hasActiveBet && !cashedOut;
 
+  const bigBtn = "w-full h-[92px] rounded-2xl border-2 flex flex-col items-center justify-center leading-tight transition-transform active:scale-[0.98]";
+
   return (
-    <div className="bg-[hsl(0_0%_11%)] border border-white/10 rounded-2xl p-2 flex flex-col gap-2 max-w-[280px] w-full mr-auto overflow-hidden">
-      <div className="flex items-center gap-2 min-w-0">
-        {/* Stepper */}
-        <div className="flex items-center gap-0.5 bg-[hsl(0_0%_16%)] rounded-full p-0.5 shrink-0 border border-white/10">
-          <Button size="icon" variant="ghost" onClick={() => adjust(-1)} className="h-7 w-7 rounded-full text-white/70 hover:text-white hover:bg-white/10">
-            <Minus className="w-3.5 h-3.5" />
-          </Button>
-          <Input
-            type="number"
-            value={amount}
-            onChange={e => setAmount(Math.max(0, +e.target.value))}
-            className="text-center text-sm font-bold tabular-nums bg-transparent border-0 h-7 w-12 px-0 text-white focus-visible:ring-0"
-            min={MIN_BET_BIRR}
-            step={1}
-          />
-          <Button size="icon" variant="ghost" onClick={() => adjust(1)} className="h-7 w-7 rounded-full text-white/70 hover:text-white hover:bg-white/10">
-            <Plus className="w-3.5 h-3.5" />
-          </Button>
+    <div className="rounded-2xl bg-[hsl(0_0%_11%)] border border-white/5 p-3">
+      {/* Bet / Auto tabs */}
+      <div className="flex justify-center mb-3">
+        <div className="flex rounded-full bg-[hsl(0_0%_16%)] p-0.5">
+          {(["bet", "auto"] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => { setMode(m); if (m === "bet") setAutoPlay(false); }}
+              className={`px-8 py-1.5 rounded-full text-sm font-semibold capitalize transition-colors ${
+                mode === m ? "bg-[hsl(0_0%_26%)] text-white" : "text-white/60"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 items-start">
+        {/* Left: amount + quick chips */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between rounded-full bg-[hsl(0_0%_16%)] px-1 h-10">
+            <button
+              onClick={() => adjust(-1)}
+              className="w-7 h-7 rounded-full bg-[hsl(0_0%_24%)] text-white/70 flex items-center justify-center"
+              aria-label="Decrease bet"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
+            <Input
+              type="number"
+              value={amount}
+              onChange={e => setAmount(Math.max(0, +e.target.value))}
+              className="flex-1 text-center text-lg font-bold tabular-nums bg-transparent border-0 h-8 px-0 text-white focus-visible:ring-0"
+            />
+            <button
+              onClick={() => adjust(1)}
+              className="w-7 h-7 rounded-full bg-[hsl(0_0%_24%)] text-white/70 flex items-center justify-center"
+              aria-label="Increase bet"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {QUICK.map(q => (
+              <button
+                key={q}
+                onClick={() => setAmount(q)}
+                className="h-9 rounded-full bg-[hsl(0_0%_16%)] text-white/70 text-sm font-medium hover:text-white"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Compact action button — green BET / red CANCEL / golden CASH OUT */}
+        {/* Right: big action button */}
         {canCashout ? (
-          <Button
+          <button
             onClick={onCashout}
-            className="flex-1 min-w-0 h-9 text-xs font-black rounded-xl flex items-center justify-center gap-1 leading-none border px-2"
-            style={{
-              background: "linear-gradient(180deg, hsl(45 100% 58%), hsl(38 96% 47%))",
-              borderColor: "hsl(45 100% 72%)",
-              color: "hsl(30 70% 12%)",
-              boxShadow: "0 0 16px hsl(45 100% 50% / 0.45)",
-            }}
+            className={`${bigBtn} text-white`}
+            style={{ background: "hsl(33 100% 45%)", borderColor: "hsl(38 100% 62%)" }}
           >
-            <span>CASH OUT</span>
-            <span className="tabular-nums truncate">{(amount * currentMult).toFixed(2)}<span className="text-[10px] ml-0.5">Birr</span></span>
-          </Button>
-        ) : canCancel ? (
-          <Button
-            onClick={onCancelBet}
-            className="flex-1 min-w-0 h-9 text-xs font-black rounded-xl border px-2 text-white"
-            style={{
-              background: "linear-gradient(180deg, hsl(0 78% 52%), hsl(0 76% 40%))",
-              borderColor: "hsl(0 85% 65%)",
-              boxShadow: "0 0 14px hsl(0 80% 50% / 0.4)",
-            }}
-          >
-            CANCEL
-          </Button>
-        ) : (
-          <Button
-            onClick={tryPlace}
-            className="flex-1 min-w-0 h-9 text-xs font-black rounded-xl flex items-center justify-center gap-1 leading-none border px-2 text-white disabled:opacity-50"
-            style={{
-              background: canPlace
-                ? "linear-gradient(180deg, hsl(122 72% 42%), hsl(122 75% 30%))"
-                : "linear-gradient(180deg, hsl(122 20% 26%), hsl(122 20% 19%))",
-              borderColor: canPlace ? "hsl(122 70% 58%)" : "hsl(122 12% 32%)",
-              boxShadow: canPlace ? "0 0 14px hsl(122 75% 40% / 0.45)" : "none",
-            }}
-          >
-            <span>{phase === "flying" && !hasActiveBet ? "QUEUE" : label.toUpperCase()}</span>
-            <span className="tabular-nums truncate">
-              {hasActiveBet
-                ? (cashedOut ? "✓" : "Flying")
-                : <>{amount.toFixed(2)}<span className="text-[10px] ml-0.5">Birr</span></>}
+            <span className="text-xl font-semibold">Cash Out</span>
+            <span className="text-lg tabular-nums">
+              {(amount * currentMult).toFixed(2)} <span className="text-sm opacity-80">ETB</span>
             </span>
-          </Button>
+          </button>
+        ) : canCancel ? (
+          <button
+            onClick={onCancelBet}
+            className={`${bigBtn} text-white`}
+            style={{ background: "hsl(350 90% 45%)", borderColor: "hsl(350 90% 62%)" }}
+          >
+            <span className="text-xl font-semibold">Cancel</span>
+          </button>
+        ) : (
+          <button
+            onClick={tryPlace}
+            className={`${bigBtn} text-white`}
+            style={{ background: "hsl(122 80% 33%)", borderColor: "hsl(122 70% 55%)" }}
+          >
+            <span className="text-xl font-semibold">{phase === "flying" && !hasActiveBet ? "Queue" : "Bet"}</span>
+            <span className="text-lg tabular-nums">
+              {amount.toFixed(2)} <span className="text-sm opacity-80">ETB</span>
+            </span>
+          </button>
         )}
       </div>
 
-
-      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/10">
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          Auto Bet
-          <Switch checked={autoPlay} onCheckedChange={setAutoPlay} />
-        </label>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          Auto Cash Out
-          <Switch checked={autoCashoutOn} onCheckedChange={setAutoCashoutOn} />
-          <Input
-            type="number"
-            value={autoCashout}
-            onChange={e => setAutoCashout(Math.max(1.01, +e.target.value))}
-            step={0.01}
-            min={1.01}
-            disabled={!autoCashoutOn}
-            className="w-16 h-7 text-center font-bold tabular-nums bg-background/50 text-xs"
-          />
-          <span className="text-xs">x</span>
-        </label>
-      </div>
+      {mode === "auto" && (
+        <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-white/10">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            Auto Bet
+            <Switch checked={autoPlay} onCheckedChange={setAutoPlay} />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            Auto Cash Out
+            <Switch checked={autoCashoutOn} onCheckedChange={setAutoCashoutOn} />
+            <Input
+              type="number"
+              value={autoCashout}
+              onChange={e => setAutoCashout(Math.max(1.01, +e.target.value))}
+              step={0.01}
+              min={1.01}
+              disabled={!autoCashoutOn}
+              className="w-16 h-7 text-center font-bold tabular-nums bg-background/50 text-xs"
+            />
+            <span className="text-xs">x</span>
+          </label>
+        </div>
+      )}
     </div>
   );
 };
