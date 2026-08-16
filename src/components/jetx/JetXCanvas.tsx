@@ -231,7 +231,17 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
       <div className="absolute inset-0 bg-particles pointer-events-none opacity-30" />
 
 
-      {/* Center light beam removed per request */}
+      {/* Moving light strip across the center */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute top-1/2 -translate-y-1/2 h-24 w-[35%] blur-2xl"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, hsl(280 90% 70% / 0.35), hsl(0 0% 100% / 0.25), transparent)",
+            animation: "center-beam 6s linear infinite",
+          }}
+        />
+      </div>
 
 
       {/* Trail SVG (only while flying) */}
