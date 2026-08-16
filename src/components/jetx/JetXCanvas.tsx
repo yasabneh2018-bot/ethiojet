@@ -233,56 +233,6 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
       {/* Center light beam removed per request */}
 
-      {/* Left axis ruler — white dots moving top → bottom */}
-      <div className="absolute left-0 top-0 bottom-0 w-3 pointer-events-none overflow-hidden">
-        <div
-          className="absolute inset-x-0"
-          style={{
-            top: 0,
-            height: "200%",
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.85) 1.4px, transparent 2px)",
-            backgroundSize: "100% 28px",
-            backgroundRepeat: "repeat-y",
-            animation: "axis-dots-down 14s linear infinite",
-          }}
-        />
-      </div>
-
-      {/* Bottom axis ruler — white dots moving right → left */}
-      <div className="absolute left-0 right-0 bottom-0 h-3 pointer-events-none overflow-hidden">
-        <div
-          className="absolute inset-y-0"
-          style={{
-            left: 0,
-            width: "200%",
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.85) 1.4px, transparent 2px)",
-            backgroundSize: "28px 100%",
-            backgroundRepeat: "repeat-x",
-            animation: "axis-dots-left 14s linear infinite",
-          }}
-        />
-      </div>
-
-      {/* Wind streaks */}
-      {phase === "flying" && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="absolute h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-              style={{
-                top: `${15 + i * 18}%`,
-                left: 0,
-                right: 0,
-                animation: `wind-streak ${1.2 + i * 0.3}s linear infinite`,
-                animationDelay: `${i * 0.25}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
 
       {/* Trail SVG (only while flying) */}
       {phase === "flying" && (
