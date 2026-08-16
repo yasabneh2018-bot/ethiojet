@@ -190,7 +190,7 @@ export const JetXCanvas = ({ onPhaseChange, onTick, onRoundEnd }: Props) => {
 
   return (
     <div
-      className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] overflow-hidden shadow-card"
+      className="relative w-full aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8.5] overflow-hidden shadow-card rounded-3xl"
       style={{ background: "radial-gradient(circle at 12% 88%, hsl(272 70% 22%) 0%, hsl(266 60% 10%) 32%, hsl(0 0% 3%) 68%, hsl(0 0% 0%) 100%)" }}
     >
       {/* Rotating light-ray strips anchored at the launch corner */}
