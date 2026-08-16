@@ -7,9 +7,8 @@ import { HistoryStrip } from "@/components/jetx/HistoryStrip";
 import { WinBanner, type WinEvent } from "@/components/jetx/WinBanner";
 import { AllBetsPanel } from "@/components/jetx/AllBetsPanel";
 import { InlineChat } from "@/components/jetx/InlineChat";
-import { MessageCircle } from "lucide-react";
 import { addScore, insertBet } from "@/lib/localDb";
-import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo, MAX_WIN_BIRR } from "@/lib/jetx";
+import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo , MAX_WIN_BIRR } from "@/lib/jetx";
 import { broadcastBet } from "@/lib/liveBets";
 import { toast } from "sonner";
 
@@ -230,14 +229,6 @@ const Index = () => {
         )}
       </div>
 
-      {/* Chat toggle — top-right, just under header/balance */}
-      <button
-        onClick={() => setChatOpen(o => !o)}
-        className="fixed top-16 right-3 z-40 w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-glow shadow-glow flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform"
-        aria-label="Toggle chat"
-      >
-        <MessageCircle className="w-5 h-5" />
-      </button>
       {/* Mobile chat overlay */}
       {chatOpen && (
         <div className="lg:hidden fixed top-28 right-3 z-40 w-[320px] h-[420px] max-h-[70vh] shadow-2xl rounded-2xl overflow-hidden border border-border">
@@ -245,9 +236,6 @@ const Index = () => {
         </div>
       )}
 
-      <footer className="text-center text-xs text-muted-foreground pt-4">
-        🎮 Play-money demo · 1 coin = 0.5 Birr · Min bet 5 Birr · Max win {MAX_WIN_BIRR.toLocaleString()} Birr
-      </footer>
     </div>
   );
 };

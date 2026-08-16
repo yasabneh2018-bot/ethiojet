@@ -148,7 +148,7 @@ export const BetControls = ({
             className={`${bigBtn} text-white`}
             style={{ background: "hsl(122 80% 33%)", borderColor: "hsl(122 70% 55%)" }}
           >
-            <span className="text-xl font-semibold">{phase === "flying" && !hasActiveBet ? "Queue" : "Bet"}</span>
+            <span className="text-xl font-semibold">Bet</span>
             <span className="text-lg tabular-nums">
               {amount.toFixed(2)} <span className="text-sm opacity-80">ETB</span>
             </span>

@@ -44,13 +44,26 @@ export const AppLayout = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="h-14 sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-border flex items-center px-3 gap-2">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Open menu">
-              <Menu className="w-5 h-5" />
-            </Button>
-          </SheetTrigger>
+        <span
+          className="text-2xl font-black italic tracking-tight text-[hsl(0_85%_55%)]"
+          style={{ fontFamily: "'Brush Script MT', cursive" }}
+        >
+          Aviator
+        </span>
+
+        <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border">
+            <Wallet className="w-4 h-4 text-primary-glow" />
+            <span className="font-bold tabular-nums text-sm">{fmtBirr(coinsToBirr(profile.balance))}</span>
+          </div>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Open menu">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
           <SheetContent side="right" className="w-[85vw] max-w-sm bg-[hsl(0_0%_10%)] border-white/10 p-0 overflow-y-auto">
+
             <div className="p-4 flex items-center gap-3 bg-white/5">
               <div className="w-12 h-12 rounded-full bg-gradient-jet flex items-center justify-center shrink-0">
                 <Plane className="w-6 h-6 text-primary-foreground" fill="currentColor" />
@@ -99,20 +112,10 @@ export const AppLayout = () => {
               </button>
             </nav>
           </SheetContent>
-        </Sheet>
-
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-jet flex items-center justify-center shadow-glow">
-            <Plane className="w-4 h-4 text-primary-foreground" fill="currentColor" />
-          </div>
-          <span className="font-black text-gradient-jet">JetX</span>
-        </div>
-
-        <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border">
-          <Wallet className="w-4 h-4 text-primary-glow" />
-          <span className="font-bold tabular-nums text-sm">{fmtBirr(coinsToBirr(profile.balance))}</span>
+          </Sheet>
         </div>
       </header>
+
       <main className="flex-1 container max-w-7xl py-3 px-2 sm:px-4">
         <Outlet />
       </main>
