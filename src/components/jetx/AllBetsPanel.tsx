@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Users, User as UserIcon, Trophy } from "lucide-react";
 import { subscribeBets, type LiveBet } from "@/lib/liveBets";
 import { coinsToBirr } from "@/lib/jetx";
 import { getBets, getUserBets, subscribeDb } from "@/lib/localDb";
 
 type Tab = "all" | "mine" | "top";
+
+const AVATAR_COLORS = [
+  "from-rose-500 to-red-700",
+  "from-emerald-500 to-green-700",
+  "from-sky-500 to-blue-700",
+  "from-amber-500 to-orange-600",
+  "from-violet-500 to-purple-700",
+  "from-teal-500 to-cyan-700",
+];
+
+const avatarClass = (seed: string) =>
+  AVATAR_COLORS[
+    Math.abs([...seed].reduce((a, c) => a + c.charCodeAt(0), 0)) % AVATAR_COLORS.length
+  ];
 
 export const AllBetsPanel = () => {
   const { user } = useAuth();
@@ -94,80 +107,107 @@ export const AllBetsPanel = () => {
   const maxWin = Math.max(100, totalWin * 1.2);
   const winPct = Math.min(100, (totalWin / maxWin) * 100);
 
-  const TabBtn = ({ id, label, icon: Icon }: { id: Tab; label: string; icon: any }) => (
-    <button
-      onClick={() => setTab(id)}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-        tab === id ? "bg-primary/20 text-primary-glow" : "text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      <Icon className="w-3.5 h-3.5" />
-      {label}
-    </button>
-  );
+  const TABS: { id: Tab; label: string }[] = [
+    { id: "all", label: "All Bets" },
+    { id: "mine", label: "Previous" },
+    { id: "top", label: "Top" },
+  ];
+
+  const fmt = (n: number) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const multColor = (m: number) =>
+    m >= 10 ? "text-fuchsia-400" : m >= 2 ? "text-purple-400" : "text-sky-400";
 
   return (
-    <div className="bg-gradient-card border border-border rounded-2xl shadow-card flex flex-col h-full overflow-hidden">
-      <div className="flex items-center gap-1 p-2 border-b border-border">
-        <TabBtn id="all" label="All Bets" icon={Users} />
-        <TabBtn id="mine" label="My Bets" icon={UserIcon} />
-        <TabBtn id="top" label="Top" icon={Trophy} />
+    <div className="rounded-2xl bg-[hsl(0_0%_11%)] border border-white/5 flex flex-col h-full overflow-hidden">
+      {/* Tabs */}
+      <div className="p-2">
+        <div className="flex rounded-full bg-[hsl(0_0%_8%)] p-1">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                tab === t.id ? "bg-[hsl(0_0%_22%)] text-white" : "text-white/55"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="px-3 py-2 border-b border-border space-y-1.5">
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">
-            <div className="font-semibold text-foreground">{cashedRows.length}/{rows.length} <span className="font-normal text-muted-foreground">Cashed</span></div>
+      {/* Summary */}
+      <div className="mx-2 mb-2 rounded-xl bg-[hsl(0_0%_8%)] px-3 py-2.5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex -space-x-2 mb-1">
+              {rows.slice(0, 3).map(r => (
+                <div
+                  key={`av-${r.id}`}
+                  className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarClass(r.username)} ring-2 ring-[hsl(0_0%_8%)]`}
+                />
+              ))}
+              {rows.length === 0 && (
+                <div className="w-7 h-7 rounded-full bg-white/10 ring-2 ring-[hsl(0_0%_8%)]" />
+              )}
+            </div>
+            <div className="text-sm text-white/60 truncate">
+              <span className="text-white font-semibold">{cashedRows.length}/{rows.length}</span> Bets
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-base font-black tabular-nums text-success">{totalWin.toFixed(2)}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total win Birr</div>
+          <div className="text-right shrink-0">
+            <div className="text-xl font-bold tabular-nums text-white">{fmt(totalWin)}</div>
+            <div className="text-xs text-white/50">Total win ETB</div>
           </div>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+        <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-success to-emerald-400 transition-all duration-500"
+            className="h-full rounded-full bg-[hsl(122_80%_40%)] transition-all duration-500"
             style={{ width: `${winPct}%` }}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_auto_auto] px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border gap-2">
-        <span>User</span>
-        <span className="text-right">Bet</span>
-        <span className="text-right">x</span>
-        <span className="text-right">Win</span>
+      {/* Column headers */}
+      <div className="grid grid-cols-[1.4fr_1fr_0.7fr_1fr] px-4 pb-1.5 text-xs text-white/45">
+        <span>Player</span>
+        <span className="text-right">Bet ETB</span>
+        <span className="text-right">X</span>
+        <span className="text-right">Win ETB</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Rows */}
+      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1">
         {rows.length === 0 ? (
-          <div className="text-center py-6 text-xs text-muted-foreground">Waiting for bets…</div>
+          <div className="text-center py-6 text-xs text-white/40">Waiting for bets…</div>
         ) : (
           rows.map(r => {
-            const mine = r.user_id === user?.id;
+            const won = r.status === "cashed";
             return (
               <div
                 key={r.id}
-                className={`grid grid-cols-[1fr_auto_auto_auto] items-center px-3 py-1.5 gap-2 text-xs border-b border-border/50 ${mine ? "bg-primary/5" : ""} ${r.status === "placed" ? "animate-pulse-soft" : ""}`}
+                className={`grid grid-cols-[1.4fr_1fr_0.7fr_1fr] items-center px-2 py-2 gap-1 rounded-xl text-sm ${
+                  won ? "bg-[hsl(100_60%_12%)] border border-[hsl(110_50%_25%)]" : "bg-[hsl(0_0%_8%)]"
+                }`}
               >
-                <div className="flex items-center gap-1.5 truncate">
-                  <div className={`w-5 h-5 rounded-full shrink-0 ${r.status === "placed" ? "bg-yellow-500" : r.status === "cashed" ? "bg-success" : "bg-muted"}`} />
-                  <span className="truncate">{r.username.slice(0, 1)}***{r.username.slice(-1)}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className={`w-7 h-7 rounded-full shrink-0 bg-gradient-to-br ${avatarClass(r.username)}`} />
+                  <span className="truncate text-white/85">
+                    {r.username.slice(0, 1)}***{r.username.slice(-1)}
+                  </span>
                 </div>
-                <span className="tabular-nums text-right">{r.amountBirr.toFixed(2)}</span>
+                <span className="tabular-nums text-right text-white/85">{fmt(r.amountBirr)}</span>
                 <span className="tabular-nums text-right">
                   {r.cashout ? (
-                    <span className="px-1.5 py-0.5 rounded bg-success/20 text-success text-[10px] font-bold">
-                      {r.cashout.toFixed(2)}x
-                    </span>
-                  ) : r.status === "placed" ? (
-                    <span className="text-yellow-500 text-[10px] font-bold">flying</span>
+                    <span className={`font-semibold ${multColor(r.cashout)}`}>{r.cashout.toFixed(2)}x</span>
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-white/25" />
                   )}
                 </span>
-                <span className={`tabular-nums text-right font-semibold ${r.status === "cashed" ? "text-success" : "text-muted-foreground"}`}>
-                  {r.status === "cashed" ? (r.payoutBirr ?? 0).toFixed(2) : "—"}
+                <span className="tabular-nums text-right text-white/85">
+                  {won ? fmt(r.payoutBirr ?? 0) : ""}
                 </span>
               </div>
             );
