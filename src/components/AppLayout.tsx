@@ -112,20 +112,10 @@ export const AppLayout = () => {
               </button>
             </nav>
           </SheetContent>
-        </Sheet>
-
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-jet flex items-center justify-center shadow-glow">
-            <Plane className="w-4 h-4 text-primary-foreground" fill="currentColor" />
-          </div>
-          <span className="font-black text-gradient-jet">JetX</span>
-        </div>
-
-        <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border">
-          <Wallet className="w-4 h-4 text-primary-glow" />
-          <span className="font-bold tabular-nums text-sm">{fmtBirr(coinsToBirr(profile.balance))}</span>
+          </Sheet>
         </div>
       </header>
+
       <main className="flex-1 container max-w-7xl py-3 px-2 sm:px-4">
         <Outlet />
       </main>
