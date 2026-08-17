@@ -230,6 +230,11 @@ const Index = () => {
               autoPlay={autoPlay2} setAutoPlay={setAutoPlay2}
             />
           </div>
+
+          {/* Mobile: live bets panel below bet controls */}
+          <div className="lg:hidden h-[520px]">
+            <AllBetsPanel />
+          </div>
         </div>
 
         {/* Right: chat — pinned at top, below header/wallet */}
