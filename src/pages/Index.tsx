@@ -11,6 +11,16 @@ import { addScore, insertBet } from "@/lib/localDb";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo , MAX_WIN_BIRR } from "@/lib/jetx";
 import { broadcastBet } from "@/lib/liveBets";
 import { toast } from "sonner";
+import cashoutAudio from "@/assets/cashout.aac.asset.json";
+
+let cashoutSnd: HTMLAudioElement | null = null;
+const playCashout = () => {
+  try {
+    if (!cashoutSnd) { cashoutSnd = new Audio(cashoutAudio.url); cashoutSnd.volume = 0.9; }
+    cashoutSnd.currentTime = 0;
+    void cashoutSnd.play();
+  } catch { /* ignore */ }
+};
 
 interface BetSlot {
   amountBirr: number;
