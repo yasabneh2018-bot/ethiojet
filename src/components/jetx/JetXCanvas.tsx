@@ -3,7 +3,7 @@ import { multiplierAt, generateCrashMultiplier } from "@/lib/jetx";
 import { consumePlannedCrash } from "@/lib/localDb";
 import jetPlane from "@/assets/jet-plane-full.png";
 import flyAudio from "@/assets/fly.aac.asset.json";
-import crashAudio from "@/assets/crash.aac.asset.json";
+import crashAudio from "@/assets/crash2.aac.asset.json";
 
 export type GamePhase = "waiting" | "flying" | "crashed";
 

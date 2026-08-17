@@ -11,6 +11,16 @@ import { addScore, insertBet } from "@/lib/localDb";
 import { coinsToBirr, birrToCoins, fmtBirr, getTournamentInfo , MAX_WIN_BIRR } from "@/lib/jetx";
 import { broadcastBet } from "@/lib/liveBets";
 import { toast } from "sonner";
+import cashoutAudio from "@/assets/cashout.aac.asset.json";
+
+let cashoutSnd: HTMLAudioElement | null = null;
+const playCashout = () => {
+  try {
+    if (!cashoutSnd) { cashoutSnd = new Audio(cashoutAudio.url); cashoutSnd.volume = 0.9; }
+    cashoutSnd.currentTime = 0;
+    void cashoutSnd.play();
+  } catch { /* ignore */ }
+};
 
 interface BetSlot {
   amountBirr: number;
@@ -108,6 +118,7 @@ const Index = () => {
     setLocal({ balance: newBalance, total_wagered: newWagered, xp: newXp });
 
     // Show green win banner
+    playCashout();
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
     broadcastBet({
       id: `${user.id}-cash-${Date.now()}`,
@@ -218,6 +229,11 @@ const Index = () => {
               onCancelBet={() => cancelBet(2)} hasActiveBet={active2} cashedOut={cashed2}
               autoPlay={autoPlay2} setAutoPlay={setAutoPlay2}
             />
+          </div>
+
+          {/* Mobile: live bets panel below bet controls */}
+          <div className="lg:hidden h-[520px]">
+            <AllBetsPanel />
           </div>
         </div>
 
