@@ -118,6 +118,7 @@ const Index = () => {
     setLocal({ balance: newBalance, total_wagered: newWagered, xp: newXp });
 
     // Show green win banner
+    playCashout();
     setWinEvent({ id: Date.now(), amount: payoutBirr, multiplier: cappedMult });
     broadcastBet({
       id: `${user.id}-cash-${Date.now()}`,
